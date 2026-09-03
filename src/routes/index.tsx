@@ -16,7 +16,13 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { useApplications } from "@/hooks/useApplications";
-import { buildTimeline, computeStats, latestApplications, upcomingActions } from "@/lib/stats";
+import {
+  buildTimeline,
+  computeStats,
+  latestApplications,
+  upcomingActions,
+  upcomingFollowUps,
+} from "@/lib/stats";
 import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -68,6 +74,7 @@ function DashboardPage() {
   const timeline = buildTimeline(applications);
   const latest = latestApplications(applications);
   const actions = upcomingActions(applications);
+  const followUps = upcomingFollowUps(applications);
 
   return (
     <AppLayout
@@ -178,7 +185,21 @@ function DashboardPage() {
                 <CardTitle className="text-base">Prochaines actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {actions.length === 0 ? (
+                {followUps.map(({ followUp, application }) => (
+                  <div
+                    key={followUp.id}
+                    className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
+                  >
+                    <CalendarClock className="mt-0.5 size-4 shrink-0 text-info" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{followUp.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {application.company} · relance {formatDate(followUp.date)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {actions.length === 0 && followUps.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Aucune action planifiée.</p>
                 ) : (
                   actions.map((app) => (

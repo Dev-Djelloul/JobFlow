@@ -1,4 +1,4 @@
-import type { Application } from "@/types/application";
+import type { Application, FollowUp } from "@/types/application";
 
 export interface DashboardStats {
   total: number;
@@ -47,6 +47,23 @@ export function upcomingActions(apps: Application[]) {
     .filter((a) => a.next_action && a.status !== "rejected")
     .sort((a, b) => (a.follow_up_date || "9999").localeCompare(b.follow_up_date || "9999"))
     .slice(0, 5);
+}
+
+export interface UpcomingFollowUp {
+  followUp: FollowUp;
+  application: Application;
+}
+
+/** Pending follow-ups (status "todo") across all applications, soonest first. */
+export function upcomingFollowUps(apps: Application[], limit = 5): UpcomingFollowUp[] {
+  return apps
+    .flatMap((application) =>
+      (application.follow_ups ?? [])
+        .filter((followUp) => followUp.status === "todo")
+        .map((followUp) => ({ followUp, application })),
+    )
+    .sort((a, b) => (a.followUp.date || "9999").localeCompare(b.followUp.date || "9999"))
+    .slice(0, limit);
 }
 
 export function latestApplications(apps: Application[]) {

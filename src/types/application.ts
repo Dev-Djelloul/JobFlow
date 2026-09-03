@@ -48,13 +48,14 @@ export interface Application {
   next_action: string;
   follow_up_date: string;
   status_history: StatusHistoryEntry[];
+  follow_ups: FollowUp[];
   created_at: string;
   updated_at: string;
 }
 
 export type ApplicationInput = Omit<
   Application,
-  "id" | "created_at" | "updated_at" | "status_history"
+  "id" | "created_at" | "updated_at" | "status_history" | "follow_ups"
 >;
 
 export interface UserSettings {
@@ -64,3 +65,25 @@ export interface UserSettings {
   density: "comfortable" | "compact";
   defaultView: "table" | "kanban";
 }
+
+export const FOLLOW_UP_STATUSES = ["todo", "done", "cancelled"] as const;
+
+export type FollowUpStatus = (typeof FOLLOW_UP_STATUSES)[number];
+
+export const FOLLOW_UP_STATUS_LABELS: Record<FollowUpStatus, string> = {
+  todo: "À faire",
+  done: "Effectuée",
+  cancelled: "Annulée",
+};
+
+export interface FollowUp {
+  id: string;
+  date: string;
+  title: string;
+  description: string;
+  status: FollowUpStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FollowUpInput = Pick<FollowUp, "date" | "title" | "description" | "status">;

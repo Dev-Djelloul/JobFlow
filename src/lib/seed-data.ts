@@ -31,6 +31,7 @@ const make = (
   notes,
   next_action,
   follow_up_date: iso(daysAgo - followInDays),
+  follow_ups: [],
   status_history:
     status === "applied"
       ? [{ status: "applied" as const, date: iso(daysAgo) }]
