@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "./StatusBadge";
+import { FollowUpSection } from "./FollowUpSection";
 import { formatDate } from "@/lib/format";
 import {
   STATUSES,
@@ -131,6 +132,12 @@ export function ApplicationDetail({
               {application.notes || "Aucune note pour le moment."}
             </p>
           </div>
+
+          <Separator />
+
+          <FollowUpSection application={application} />
+
+          <Separator />
 
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
