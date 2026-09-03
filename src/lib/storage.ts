@@ -14,6 +14,15 @@ export const defaultSettings: UserSettings = {
 
 const isBrowser = () => typeof window !== "undefined";
 
+/** Backward compatible migration: older records have no `follow_ups` array. */
+function normalize(apps: Application[]): Application[] {
+  return apps.map((a) => ({
+    ...a,
+    status_history: Array.isArray(a.status_history) ? a.status_history : [],
+    follow_ups: Array.isArray(a.follow_ups) ? a.follow_ups : [],
+  }));
+}
+
 export function loadApplications(): Application[] {
   if (!isBrowser()) return seedApplications;
   try {
@@ -23,7 +32,7 @@ export function loadApplications(): Application[] {
       return seedApplications;
     }
     const parsed = JSON.parse(raw) as Application[];
-    return Array.isArray(parsed) ? parsed : seedApplications;
+    return Array.isArray(parsed) ? normalize(parsed) : seedApplications;
   } catch {
     return seedApplications;
   }
