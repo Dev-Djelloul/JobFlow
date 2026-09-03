@@ -31,9 +31,13 @@ const make = (
   notes,
   next_action,
   follow_up_date: iso(daysAgo - followInDays),
-  status_history: [{ status: "applied", date: iso(daysAgo) }, { status, date: iso(Math.max(0, daysAgo - 3)) }].filter(
-    (e, i, arr) => i === 0 || e.status !== arr[0].status,
-  ),
+  status_history:
+    status === "applied"
+      ? [{ status: "applied" as const, date: iso(daysAgo) }]
+      : [
+          { status: "applied" as const, date: iso(daysAgo) },
+          { status, date: iso(Math.max(0, daysAgo - 3)) },
+        ],
   created_at: new Date(iso(daysAgo)).toISOString(),
   updated_at: new Date(iso(Math.max(0, daysAgo - 3))).toISOString(),
 });
