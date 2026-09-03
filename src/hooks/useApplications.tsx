@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type {
   Application,
   ApplicationInput,
@@ -6,22 +6,9 @@ import type {
   FollowUpInput,
 } from "@/types/application";
 import { loadApplications, saveApplications } from "@/lib/storage";
+import { ApplicationsContext, useApplications } from "./applications-context";
 
-interface ApplicationsContextValue {
-  applications: Application[];
-  loading: boolean;
-  createApplication: (input: ApplicationInput) => Application;
-  updateApplication: (id: string, input: Partial<ApplicationInput>) => void;
-  deleteApplication: (id: string) => void;
-  changeStatus: (id: string, status: ApplicationStatus) => void;
-  addFollowUp: (applicationId: string, input: FollowUpInput) => void;
-  updateFollowUp: (applicationId: string, followUpId: string, input: Partial<FollowUpInput>) => void;
-  deleteFollowUp: (applicationId: string, followUpId: string) => void;
-  getApplication: (id: string) => Application | undefined;
-  resetDemoData: () => void;
-}
-
-const ApplicationsContext = createContext<ApplicationsContextValue | null>(null);
+export { useApplications };
 
 const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -161,10 +148,4 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;
-}
-
-export function useApplications() {
-  const ctx = useContext(ApplicationsContext);
-  if (!ctx) throw new Error("useApplications must be used within ApplicationsProvider");
-  return ctx;
 }
