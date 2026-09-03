@@ -1,5 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Application, ApplicationInput, ApplicationStatus } from "@/types/application";
+import type {
+  Application,
+  ApplicationInput,
+  ApplicationStatus,
+  FollowUpInput,
+} from "@/types/application";
 import { loadApplications, saveApplications } from "@/lib/storage";
 
 interface ApplicationsContextValue {
@@ -9,6 +14,9 @@ interface ApplicationsContextValue {
   updateApplication: (id: string, input: Partial<ApplicationInput>) => void;
   deleteApplication: (id: string) => void;
   changeStatus: (id: string, status: ApplicationStatus) => void;
+  addFollowUp: (applicationId: string, input: FollowUpInput) => void;
+  updateFollowUp: (applicationId: string, followUpId: string, input: Partial<FollowUpInput>) => void;
+  deleteFollowUp: (applicationId: string, followUpId: string) => void;
   getApplication: (id: string) => Application | undefined;
   resetDemoData: () => void;
 }
@@ -44,6 +52,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
         ...input,
         id: newId(),
         status_history: [{ status: input.status, date: now.slice(0, 10) }],
+        follow_ups: [],
         created_at: now,
         updated_at: now,
       };
@@ -83,6 +92,47 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     [updateApplication],
   );
 
+  const mutateFollowUps = useCallback(
+    (applicationId: string, fn: (list: Application["follow_ups"]) => Application["follow_ups"]) => {
+      persist(
+        applications.map((a) =>
+          a.id === applicationId
+            ? { ...a, follow_ups: fn(a.follow_ups ?? []), updated_at: new Date().toISOString() }
+            : a,
+        ),
+      );
+    },
+    [applications, persist],
+  );
+
+  const addFollowUp = useCallback(
+    (applicationId: string, input: FollowUpInput) => {
+      const now = new Date().toISOString();
+      mutateFollowUps(applicationId, (list) => [
+        ...list,
+        { ...input, id: newId(), created_at: now, updated_at: now },
+      ]);
+    },
+    [mutateFollowUps],
+  );
+
+  const updateFollowUp = useCallback(
+    (applicationId: string, followUpId: string, input: Partial<FollowUpInput>) => {
+      mutateFollowUps(applicationId, (list) =>
+        list.map((f) =>
+          f.id === followUpId ? { ...f, ...input, updated_at: new Date().toISOString() } : f,
+        ),
+      );
+    },
+    [mutateFollowUps],
+  );
+
+  const deleteFollowUp = useCallback(
+    (applicationId: string, followUpId: string) =>
+      mutateFollowUps(applicationId, (list) => list.filter((f) => f.id !== followUpId)),
+    [mutateFollowUps],
+  );
+
   const getApplication = useCallback(
     (id: string) => applications.find((a) => a.id === id),
     [applications],
@@ -101,10 +151,13 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       updateApplication,
       deleteApplication,
       changeStatus,
+      addFollowUp,
+      updateFollowUp,
+      deleteFollowUp,
       getApplication,
       resetDemoData,
     }),
-    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, getApplication, resetDemoData],
+    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData],
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;
