@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useApplications } from "@/hooks/useApplications";
+import { useContacts } from "@/hooks/useContacts";
 import { useSettings } from "@/hooks/useSettings";
 import { formatDate } from "@/lib/format";
 import { loadLastExportAt, saveLastExportAt, writeSafetyBackup } from "@/lib/storage";
@@ -25,21 +26,25 @@ import {
   type BackupSummary,
 } from "@/lib/backup";
 import { STATUS_LABELS, type Application } from "@/types/application";
+import type { Contact } from "@/types/contact";
 
 export function DataBackupSection() {
   const { applications, replaceAllApplications } = useApplications();
+  const { contacts, replaceAllContacts } = useContacts();
   const { settings } = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [lastExport, setLastExport] = useState<string | null>(() => loadLastExportAt());
-  const [pending, setPending] = useState<{ summary: BackupSummary; applications: Application[] } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{
+    summary: BackupSummary;
+    applications: Application[];
+    contacts: Contact[];
+  } | null>(null);
 
   const followUpCount = applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0);
 
   const handleExportJson = () => {
     try {
-      const backup = buildBackup(applications, settings);
+      const backup = buildBackup(applications, contacts, settings);
       downloadJsonBackup(backup);
       saveLastExportAt(backup.exported_at);
       setLastExport(backup.exported_at);
@@ -70,7 +75,11 @@ export function DataBackupSection() {
         toast.error(result.error);
         return;
       }
-      setPending({ summary: result.summary, applications: result.applications });
+      setPending({
+        summary: result.summary,
+        applications: result.applications,
+        contacts: result.contacts,
+      });
     } catch {
       toast.error("Impossible de lire le fichier.");
     } finally {
@@ -83,8 +92,9 @@ export function DataBackupSection() {
     const saved = writeSafetyBackup();
     try {
       replaceAllApplications(pending.applications);
+      replaceAllContacts(pending.contacts);
       toast.success(
-        `${pending.applications.length} candidature(s) importée(s)${saved ? " — sauvegarde de sécurité créée" : ""}`,
+        `${pending.applications.length} candidature(s) et ${pending.contacts.length} contact(s) importés${saved ? " — sauvegarde de sécurité créée" : ""}`,
       );
     } catch {
       toast.error("Import échoué : vos données actuelles sont conservées.");
@@ -95,7 +105,7 @@ export function DataBackupSection() {
 
   return (
     <div className="space-y-4">
-      <dl className="grid gap-3 sm:grid-cols-3">
+      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border p-3">
           <dt className="text-xs text-muted-foreground">Candidatures</dt>
           <dd className="text-lg font-semibold">{applications.length}</dd>
@@ -103,6 +113,10 @@ export function DataBackupSection() {
         <div className="rounded-lg border p-3">
           <dt className="text-xs text-muted-foreground">Relances</dt>
           <dd className="text-lg font-semibold">{followUpCount}</dd>
+        </div>
+        <div className="rounded-lg border p-3">
+          <dt className="text-xs text-muted-foreground">Contacts</dt>
+          <dd className="text-lg font-semibold">{contacts.length}</dd>
         </div>
         <div className="rounded-lg border p-3">
           <dt className="text-xs text-muted-foreground">Dernier export</dt>
@@ -138,6 +152,7 @@ export function DataBackupSection() {
                 <p>Cette sauvegarde remplacera vos données actuelles :</p>
                 <ul className="list-inside list-disc">
                   <li>{pending?.summary.applications ?? 0} candidature(s)</li>
+                  <li>{pending?.summary.contacts ?? 0} contact(s)</li>
                   <li>{pending?.summary.followUps ?? 0} relance(s)</li>
                   <li>{pending?.summary.statusEntries ?? 0} entrée(s) d'historique</li>
                   <li>
