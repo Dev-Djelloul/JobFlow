@@ -17,7 +17,7 @@ const isKnown = (name: string): name is EmailVariable =>
 export function extractVariables(text: string): EmailVariable[] {
   const found: EmailVariable[] = [];
   for (const match of text.matchAll(VAR_RE)) {
-    const name = match[1].toLowerCase();
+    const name = (match[1] ?? "").toLowerCase();
     if (isKnown(name) && !found.includes(name)) found.push(name);
   }
   return found;
