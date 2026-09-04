@@ -29,15 +29,15 @@ export const AVATAR_PRESETS: AvatarPreset[] = [
 ];
 
 export function presetClassName(id?: string): string {
-  return (AVATAR_PRESETS.find((p) => p.id === id) ?? AVATAR_PRESETS[0]).className;
+  return (AVATAR_PRESETS.find((p) => p.id === id) ?? AVATAR_PRESETS[0]!).className;
 }
 
 /** Initiales (1 à 2 lettres) dérivées du nom, repli sur "JF". */
 export function initialsFromName(name?: string): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "JF";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
 export const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024;
