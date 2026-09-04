@@ -25,6 +25,11 @@ import {
   summarizeActions,
 } from "@/lib/actions";
 import { analyticsSummary, formatRate } from "@/lib/analytics";
+import {
+  PRIORITY_DOTS,
+  buildApplicationInsights,
+  summarizeInsights,
+} from "@/lib/intelligence";
 import { cn } from "@/lib/utils";
 import { formatDate, relativeDateLabel } from "@/lib/format";
 
