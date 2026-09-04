@@ -35,6 +35,8 @@ import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import {
+  remoteLabel,
+  sourceLabel,
   STATUSES,
   STATUS_LABELS,
   type Application,
@@ -126,6 +128,27 @@ export function ApplicationDetail({
                 ) : null
               }
             />
+            <Field
+              label="Source"
+              value={
+                application.source ? (
+                  application.source_url ? (
+                    <a
+                      href={application.source_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      {sourceLabel(application.source)} <ExternalLink className="size-3" />
+                    </a>
+                  ) : (
+                    sourceLabel(application.source)
+                  )
+                ) : null
+              }
+            />
+            <Field label="Télétravail" value={remoteLabel(application.remote)} />
+            <Field label="Niveau d'expérience" value={application.experience_level} />
             <Field label="Prochaine action" value={application.next_action} />
           </div>
 
