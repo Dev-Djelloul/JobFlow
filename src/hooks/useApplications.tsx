@@ -40,6 +40,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
         id: newId(),
         status_history: [{ status: input.status, date: now.slice(0, 10) }],
         follow_ups: [],
+        contact_ids: [],
         created_at: now,
         updated_at: now,
       };
