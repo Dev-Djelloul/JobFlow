@@ -37,6 +37,8 @@ import {
   computeKpis,
   filterApplications,
   formatRate,
+  applicationsWithoutSource,
+  MIN_SOURCE_SAMPLE,
   sourcePerformance,
   statusBreakdown,
   type AnalyticsFilters,
