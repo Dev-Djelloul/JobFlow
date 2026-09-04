@@ -144,7 +144,7 @@ export function FollowUpSection({ application }: { application: Application }) {
         onOpenChange={(o) => !o && setEmailFor(null)}
         applicationId={application.id}
         contactId={application.contact_ids?.[0] ?? null}
-        templateId={suggestTemplateId({ application, followUpTitle: emailFor?.title })}
+        templateId={suggestTemplateId({ application, followUpTitle: emailFor?.title ?? "" })}
       />
 
       <FollowUpForm
