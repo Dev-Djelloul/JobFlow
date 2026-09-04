@@ -67,6 +67,12 @@ export interface UserSettings {
   theme: "light" | "dark";
   density: "comfortable" | "compact";
   defaultView: "table" | "kanban";
+  /** Photo de profil importée (data URL) — vide si aucun import. */
+  avatar: string;
+  /** Identifiant de l'avatar prédéfini utilisé quand aucune photo n'est importée. */
+  avatarPreset: string;
+  /** Panneau latéral replié (icônes seules) sur grand écran. */
+  sidebarCollapsed: boolean;
 }
 
 export const FOLLOW_UP_STATUSES = ["todo", "done", "cancelled"] as const;
