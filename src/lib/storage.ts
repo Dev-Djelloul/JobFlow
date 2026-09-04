@@ -15,6 +15,9 @@ export const defaultSettings: UserSettings = {
   theme: "light",
   density: "comfortable",
   defaultView: "table",
+  avatar: "",
+  avatarPreset: "primary",
+  sidebarCollapsed: false,
 };
 
 const isBrowser = () => typeof window !== "undefined";

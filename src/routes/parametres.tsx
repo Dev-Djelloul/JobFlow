@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { DataBackupSection } from "@/components/settings/DataBackupSection";
+import { AvatarSection } from "@/components/settings/AvatarSection";
 import { useSettings } from "@/hooks/useSettings";
 import { useApplications } from "@/hooks/useApplications";
 import type { UserSettings } from "@/types/application";
@@ -85,7 +86,8 @@ function SettingsPage() {
             <CardTitle className="text-base">Profil</CardTitle>
             <CardDescription>Ces informations s'affichent dans la barre latérale.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <AvatarSection />
             <div className="grid gap-1.5">
               <Label htmlFor="name">Nom</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -114,6 +116,20 @@ function SettingsPage() {
                 checked={settings.theme === "dark"}
                 onCheckedChange={(checked) => updateSettings({ theme: checked ? "dark" : "light" })}
                 aria-label="Mode sombre"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Menu latéral replié</p>
+                <p className="text-sm text-muted-foreground">
+                  Afficher uniquement les icônes sur grand écran.
+                </p>
+              </div>
+              <Switch
+                checked={settings.sidebarCollapsed}
+                onCheckedChange={(checked) => updateSettings({ sidebarCollapsed: checked })}
+                aria-label="Menu latéral replié"
               />
             </div>
 
