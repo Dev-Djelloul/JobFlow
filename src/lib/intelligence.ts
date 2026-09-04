@@ -59,7 +59,8 @@ export type InsightType =
   | "missing_follow_up"
   | "no_next_action"
   | "missing_contact"
-  | "recent_positive_change";
+  | "recent_positive_change"
+  | "incomplete_data";
 
 /** Cible du bouton d'appel à l'action : réutilise les modules existants. */
 export type InsightCta =
@@ -228,6 +229,7 @@ const TYPE_RANK: Record<InsightType, number> = {
   no_next_action: 7,
   missing_contact: 8,
   recent_positive_change: 9,
+  incomplete_data: 10,
 };
 
 const PRIORITY_RANK: Record<InsightPriority, number> = {
@@ -376,6 +378,25 @@ export function buildApplicationInsights(
         suggestedAction: "Ajouter un contact",
         cta: { kind: "contact", label: "Ajouter un contact" },
         contactAvailable: false,
+      });
+    }
+
+    // 8. Données incomplètes : la candidature existe mais reste peu exploitable.
+    const gaps: string[] = [];
+    if (!app.source) gaps.push("source");
+    if (!app.application_date) gaps.push("date de candidature");
+    if (!app.location?.trim()) gaps.push("localisation");
+    if (!app.job_url?.trim() && !app.source_url?.trim()) gaps.push("lien vers l'offre");
+    if (isActiveApplication(app) && gaps.length >= 2) {
+      push({
+        id: `${app.id}-incomplete`,
+        type: "incomplete_data",
+        priority: "low",
+        title: "Fiche incomplète",
+        reason: `Champs manquants : ${gaps.join(", ")}. Vos statistiques et relances en dépendent.`,
+        suggestedAction: "Compléter la fiche",
+        cta: { kind: "application", label: "Compléter la fiche" },
+        contactAvailable: hasContact,
       });
     }
 

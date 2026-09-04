@@ -22,7 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  APPLICATION_SOURCES,
   CONTRACT_TYPES,
+  REMOTE_LABELS,
+  REMOTE_MODES,
+  SOURCE_LABELS,
   STATUSES,
   STATUS_LABELS,
   type Application,
@@ -36,6 +40,10 @@ const schema = z.object({
   contract_type: z.enum(CONTRACT_TYPES),
   salary: z.string().trim().max(40).default(""),
   job_url: z.string().trim().url("URL invalide").or(z.literal("")).default(""),
+  source: z.enum(APPLICATION_SOURCES).or(z.literal("")).default(""),
+  source_url: z.string().trim().url("URL invalide").or(z.literal("")).default(""),
+  remote: z.enum(REMOTE_MODES).or(z.literal("")).default(""),
+  experience_level: z.string().trim().max(120).default(""),
   application_date: z.string().min(1, "La date est obligatoire"),
   status: z.enum(STATUSES),
   notes: z.string().max(2000).default(""),
@@ -52,6 +60,10 @@ const emptyValues = (): FormValues => ({
   contract_type: "CDI",
   salary: "",
   job_url: "",
+  source: "",
+  source_url: "",
+  remote: "",
+  experience_level: "",
   application_date: new Date().toISOString().slice(0, 10),
   status: "to_target",
   notes: "",
@@ -84,6 +96,10 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
             contract_type: application.contract_type,
             salary: application.salary,
             job_url: application.job_url,
+            source: application.source ?? "",
+            source_url: application.source_url ?? "",
+            remote: application.remote ?? "",
+            experience_level: application.experience_level ?? "",
             application_date: application.application_date,
             status: application.status,
             notes: application.notes,
@@ -109,7 +125,16 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
         <form
           className="grid gap-4 sm:grid-cols-2"
           onSubmit={handleSubmit((values) => {
-            onSubmit(schema.parse(values) as ApplicationInput);
+            const parsed = schema.parse(values);
+            const { source, source_url, remote, experience_level, ...rest } = parsed;
+            onSubmit({
+              ...rest,
+              // Champs optionnels : on n'enregistre que ce qui est réellement renseigné.
+              ...(source ? { source } : {}),
+              ...(source_url ? { source_url } : {}),
+              ...(remote ? { remote } : {}),
+              ...(experience_level ? { experience_level } : {}),
+            } as ApplicationInput);
           })}
         >
           <div className="grid gap-1.5">
@@ -157,6 +182,67 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
             <Label htmlFor="job_url">URL de l'offre</Label>
             <Input id="job_url" {...register("job_url")} placeholder="https://…" />
             {errors.job_url && <p className="text-xs text-destructive">{errors.job_url.message}</p>}
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="source">Source</Label>
+            <Select
+              value={watch("source") || "none"}
+              onValueChange={(v) =>
+                setValue("source", (v === "none" ? "" : v) as FormValues["source"])
+              }
+            >
+              <SelectTrigger id="source">
+                <SelectValue placeholder="Non renseignée" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Non renseignée</SelectItem>
+                {APPLICATION_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {SOURCE_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="source_url">URL source</Label>
+            <Input id="source_url" {...register("source_url")} placeholder="https://…" />
+            {errors.source_url && (
+              <p className="text-xs text-destructive">{errors.source_url.message}</p>
+            )}
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="remote">Télétravail</Label>
+            <Select
+              value={watch("remote") || "none"}
+              onValueChange={(v) =>
+                setValue("remote", (v === "none" ? "" : v) as FormValues["remote"])
+              }
+            >
+              <SelectTrigger id="remote">
+                <SelectValue placeholder="Non renseigné" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Non renseigné</SelectItem>
+                {REMOTE_MODES.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {REMOTE_LABELS[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="experience_level">Niveau d'expérience</Label>
+            <Input
+              id="experience_level"
+              {...register("experience_level")}
+              placeholder="Junior, Confirmé, Senior…"
+            />
           </div>
 
           <div className="grid gap-1.5">

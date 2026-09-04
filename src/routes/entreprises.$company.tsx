@@ -23,6 +23,7 @@ import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { buildCompanies, conversionRates, isOverdue } from "@/lib/companies";
 import { formatDate } from "@/lib/format";
 import { FOLLOW_UP_STATUS_LABELS } from "@/types/application";
+import { sourceLabel } from "@/types/application";
 
 export const Route = createFileRoute("/entreprises/$company")({
   head: () => ({
@@ -151,7 +152,9 @@ function CompanyDetailPage() {
                     <StatusBadge status={app.status} />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {[app.location, app.contract_type].filter(Boolean).join(" · ")}
+                    {[app.location, app.contract_type, sourceLabel(app.source)]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(app.application_date) || "—"}
@@ -169,6 +172,7 @@ function CompanyDetailPage() {
                     <TableHead>Poste</TableHead>
                     <TableHead>Localisation</TableHead>
                     <TableHead>Contrat</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Prochaine action</TableHead>
@@ -184,6 +188,7 @@ function CompanyDetailPage() {
                       <TableCell className="font-medium">{app.position}</TableCell>
                       <TableCell>{app.location || "—"}</TableCell>
                       <TableCell>{app.contract_type}</TableCell>
+                      <TableCell>{sourceLabel(app.source) || "—"}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatDate(app.application_date) || "—"}
                       </TableCell>

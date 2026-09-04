@@ -29,6 +29,49 @@ export const CONTRACT_TYPES = [
 
 export type ContractType = (typeof CONTRACT_TYPES)[number];
 
+/** Provenance d'une candidature (optionnelle : les anciennes données n'en ont pas). */
+export const APPLICATION_SOURCES = [
+  "linkedin",
+  "indeed",
+  "welcome_to_the_jungle",
+  "france_travail",
+  "company_website",
+  "referral",
+  "recruiter",
+  "spontaneous",
+  "other",
+] as const;
+
+export type ApplicationSource = (typeof APPLICATION_SOURCES)[number];
+
+export const SOURCE_LABELS: Record<ApplicationSource, string> = {
+  linkedin: "LinkedIn",
+  indeed: "Indeed",
+  welcome_to_the_jungle: "Welcome to the Jungle",
+  france_travail: "France Travail",
+  company_website: "Site de l'entreprise",
+  referral: "Cooptation",
+  recruiter: "Cabinet / recruteur",
+  spontaneous: "Candidature spontanée",
+  other: "Autre",
+};
+
+export const sourceLabel = (source?: string): string =>
+  source && source in SOURCE_LABELS ? SOURCE_LABELS[source as ApplicationSource] : "";
+
+export const REMOTE_MODES = ["onsite", "hybrid", "remote"] as const;
+
+export type RemoteMode = (typeof REMOTE_MODES)[number];
+
+export const REMOTE_LABELS: Record<RemoteMode, string> = {
+  onsite: "Sur site",
+  hybrid: "Hybride",
+  remote: "Télétravail",
+};
+
+export const remoteLabel = (mode?: string): string =>
+  mode && mode in REMOTE_LABELS ? REMOTE_LABELS[mode as RemoteMode] : "";
+
 export interface StatusHistoryEntry {
   status: ApplicationStatus;
   date: string;
@@ -43,6 +86,14 @@ export interface Application {
   salary: string;
   job_url: string;
   application_date: string;
+  /** Provenance de la candidature — absent des données antérieures. */
+  source?: ApplicationSource;
+  /** Lien vers l'annonce sur la plateforme d'origine. */
+  source_url?: string;
+  /** Modalité de travail. */
+  remote?: RemoteMode;
+  /** Niveau d'expérience attendu (texte libre : « Junior », « 3-5 ans »…). */
+  experience_level?: string;
   status: ApplicationStatus;
   notes: string;
   next_action: string;

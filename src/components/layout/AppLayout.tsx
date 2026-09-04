@@ -8,6 +8,7 @@ import {
   KanbanSquare,
   ListTodo,
   Settings,
+  ShieldCheck,
   Sparkles,
   Users,
   Mail,
@@ -32,6 +33,7 @@ const NAV = [
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/emails", label: "Emails", icon: Mail },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
