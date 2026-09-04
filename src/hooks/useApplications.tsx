@@ -125,6 +125,11 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     [applications],
   );
 
+  const replaceAllApplications = useCallback(
+    (apps: Application[]) => persist(apps),
+    [persist],
+  );
+
   const resetDemoData = useCallback(() => {
     if (typeof window !== "undefined") window.localStorage.removeItem("jobflow.applications.v1");
     setApplications(loadApplications());
