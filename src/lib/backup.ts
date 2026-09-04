@@ -1,14 +1,21 @@
 import { z } from "zod";
 import type { Application } from "@/types/application";
+import { remoteLabel, sourceLabel } from "@/types/application";
 import type { Contact } from "@/types/contact";
 import type { EmailTemplate } from "@/types/email";
 import { EMAIL_VARIABLES } from "@/types/email";
-import { CONTRACT_TYPES, FOLLOW_UP_STATUSES, STATUSES } from "@/types/application";
+import {
+  APPLICATION_SOURCES,
+  CONTRACT_TYPES,
+  FOLLOW_UP_STATUSES,
+  REMOTE_MODES,
+  STATUSES,
+} from "@/types/application";
 
 export const BACKUP_FORMAT = "jobflow.backup";
-export const BACKUP_VERSION = 3;
-/** Versions du format que l'import sait lire. */
-export const SUPPORTED_VERSIONS = [1, 2, 3];
+export const BACKUP_VERSION = 4;
+/** Versions du format que l'import sait lire (v1→v4, champs manquants tolérés). */
+export const SUPPORTED_VERSIONS = [1, 2, 3, 4];
 
 const statusSchema = z.enum(STATUSES);
 const contractSchema = z.enum(CONTRACT_TYPES);
@@ -66,6 +73,11 @@ const applicationSchema = z.object({
   salary: z.string().max(120).default(""),
   job_url: z.string().max(2000).default(""),
   application_date: dateish.default(""),
+  // Ajoutés en v4 : absents des sauvegardes v1/v2/v3, donc strictement optionnels.
+  source: z.enum(APPLICATION_SOURCES).optional(),
+  source_url: z.string().max(2000).optional(),
+  remote: z.enum(REMOTE_MODES).optional(),
+  experience_level: z.string().max(120).optional(),
   status: statusSchema,
   notes: z.string().max(10000).default(""),
   next_action: z.string().max(500).default(""),
@@ -235,6 +247,11 @@ const CSV_HEADERS = [
   "Statut",
   "Prochaine action",
   "Date de relance",
+  "Source",
+  "URL source",
+  "URL de l'offre",
+  "Télétravail",
+  "Niveau d'expérience",
 ];
 
 const escapeCsv = (value: string) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -251,6 +268,11 @@ export function buildCsv(applications: Application[], statusLabel: (s: Applicati
       statusLabel(a.status),
       a.next_action,
       a.follow_up_date,
+      sourceLabel(a.source),
+      a.source_url ?? "",
+      a.job_url ?? "",
+      remoteLabel(a.remote),
+      a.experience_level ?? "",
     ]
       .map((v) => escapeCsv(v ?? ""))
       .join(";"),
