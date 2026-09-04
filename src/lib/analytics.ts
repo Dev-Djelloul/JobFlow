@@ -253,34 +253,96 @@ export function companyPerformance(apps: Application[], limit = 8): CompanyPerfo
 /* --------------------------------------------------- Performance sources */
 
 /**
- * Le modèle `Application` ne contient aucun champ `source` exploitable dans
- * cette version : aucune donnée n'est inventée. Le jour où un champ `source`
- * sera ajouté au modèle, cette fonction devient la seule à modifier.
+ * Performance par canal de sourcing. Seules les candidatures dont la source
+ * est réellement renseignée entrent dans le calcul : rien n'est déduit ni
+ * inventé, et les taux passent à `null` sous le seuil d'échantillon.
  */
+export const MIN_SOURCE_SAMPLE = 3;
+
 export interface SourcePerformance {
-  source: string;
+  source: ApplicationSource;
+  label: string;
   total: number;
   interviews: number;
+  offers: number;
+  rejected: number;
+  /** null tant que l'échantillon est trop faible pour être lu. */
   interviewRate: number | null;
+  offerRate: number | null;
+  /** Délai moyen candidature → premier entretien, en jours. */
+  averageInterviewDelay: number | null;
+  delaySample: number;
 }
 
 export function sourcePerformance(apps: Application[]): SourcePerformance[] {
-  const map = new Map<string, Application[]>();
+  const map = new Map<ApplicationSource, Application[]>();
   for (const app of apps) {
-    const source = ((app as Application & { source?: string }).source ?? "").trim();
+    const source = app.source;
     if (!source) continue;
     const list = map.get(source);
     if (list) list.push(app);
     else map.set(source, [app]);
   }
   return [...map.entries()]
-    .map(([source, list]) => ({
-      source,
-      total: list.length,
-      interviews: list.filter(hasInterview).length,
-      interviewRate: rate(list.filter(hasInterview).length, list.length),
-    }))
-    .sort((a, b) => b.total - a.total);
+    .map(([source, list]) => {
+      const interviews = list.filter(hasInterview).length;
+      const offers = list.filter(hasOffer).length;
+      const delays: number[] = [];
+      for (const app of list) {
+        if (!app.application_date) continue;
+        const date = firstHistoryDate(app, INTERVIEW_STATUSES);
+        if (!date) continue;
+        const d = daysBetween(app.application_date, date);
+        if (d >= 0) delays.push(d);
+      }
+      const enough = list.length >= MIN_SOURCE_SAMPLE;
+      return {
+        source,
+        label: SOURCE_LABELS[source],
+        total: list.length,
+        interviews,
+        offers,
+        rejected: list.filter((a) => a.status === "rejected").length,
+        interviewRate: enough ? rate(interviews, list.length) : null,
+        offerRate: enough ? rate(offers, list.length) : null,
+        averageInterviewDelay:
+          delays.length === 0
+            ? null
+            : Math.round((delays.reduce((a, b) => a + b, 0) / delays.length) * 10) / 10,
+        delaySample: delays.length,
+      };
+    })
+    .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label, "fr"));
+}
+
+/** Nombre de candidatures sans source renseignée. */
+export function applicationsWithoutSource(apps: Application[]): number {
+  return apps.filter((a) => !a.source).length;
+}
+
+/** Volume mensuel par source : [{ month, <label>: n }] pour un graphe empilé. */
+export function sourceMonthlyVolume(apps: Application[]): {
+  months: { month: string; [label: string]: string | number }[];
+  labels: string[];
+} {
+  const withSource = apps.filter((a) => a.source && a.application_date);
+  const labels = [...new Set(withSource.map((a) => SOURCE_LABELS[a.source!]))];
+  const byMonth = new Map<string, Record<string, number>>();
+  for (const app of withSource) {
+    const month = app.application_date.slice(0, 7);
+    const entry = byMonth.get(month) ?? {};
+    const label = SOURCE_LABELS[app.source!];
+    entry[label] = (entry[label] ?? 0) + 1;
+    byMonth.set(month, entry);
+  }
+  const months = [...byMonth.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, counts]) => {
+      const row: { month: string; [label: string]: string | number } = { month };
+      for (const label of labels) row[label] = counts[label] ?? 0;
+      return row;
+    });
+  return { months, labels };
 }
 
 /* ------------------------------------------------------------------ Délais */
