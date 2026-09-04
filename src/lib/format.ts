@@ -15,8 +15,8 @@ export function todayKey(d: Date = new Date()): string {
 
 /** Décale une date yyyy-mm-dd de n jours (gère mois et années). */
 export function addDaysKey(key: string, days: number): string {
-  const [y, m, d] = key.split("-").map(Number);
-  return todayKey(new Date(y, (m ?? 1) - 1, (d ?? 1) + days));
+  const [y = 1970, m = 1, d = 1] = key.split("-").map(Number);
+  return todayKey(new Date(y, m - 1, d + days));
 }
 
 /** Libellé relatif : Aujourd'hui, Demain, Hier, ou date formatée. */
@@ -31,10 +31,10 @@ export function relativeDateLabel(value: string): string {
 
 /** Nombre de jours entiers entre deux dates yyyy-mm-dd. */
 export function daysBetween(from: string, to: string): number {
-  const [y1, m1, d1] = from.split("-").map(Number);
-  const [y2, m2, d2] = to.split("-").map(Number);
-  const a = Date.UTC(y1, (m1 ?? 1) - 1, d1 ?? 1);
-  const b = Date.UTC(y2, (m2 ?? 1) - 1, d2 ?? 1);
+  const [y1 = 1970, m1 = 1, d1 = 1] = from.split("-").map(Number);
+  const [y2 = 1970, m2 = 1, d2 = 1] = to.split("-").map(Number);
+  const a = Date.UTC(y1, m1 - 1, d1);
+  const b = Date.UTC(y2, m2 - 1, d2);
   return Math.round((b - a) / 86400000);
 }
 
