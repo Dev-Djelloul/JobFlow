@@ -1,0 +1,160 @@
+import { useRef, useState } from "react";
+import { Download, FileSpreadsheet, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useApplications } from "@/hooks/useApplications";
+import { useSettings } from "@/hooks/useSettings";
+import { formatDate } from "@/lib/format";
+import { loadLastExportAt, saveLastExportAt, writeSafetyBackup } from "@/lib/storage";
+import {
+  buildBackup,
+  buildCsv,
+  downloadCsv,
+  downloadJsonBackup,
+  parseBackup,
+  type BackupSummary,
+} from "@/lib/backup";
+import { STATUS_LABELS, type Application } from "@/types/application";
+
+export function DataBackupSection() {
+  const { applications, replaceAllApplications } = useApplications();
+  const { settings } = useSettings();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [lastExport, setLastExport] = useState<string | null>(() => loadLastExportAt());
+  const [pending, setPending] = useState<{ summary: BackupSummary; applications: Application[] } | null>(
+    null,
+  );
+
+  const followUpCount = applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0);
+
+  const handleExportJson = () => {
+    try {
+      const backup = buildBackup(applications, settings);
+      downloadJsonBackup(backup);
+      saveLastExportAt(backup.exported_at);
+      setLastExport(backup.exported_at);
+      toast.success("Sauvegarde JSON exportée");
+    } catch {
+      toast.error("Échec de l'export JSON");
+    }
+  };
+
+  const handleExportCsv = () => {
+    try {
+      downloadCsv(buildCsv(applications, (s) => STATUS_LABELS[s]));
+      const now = new Date().toISOString();
+      saveLastExportAt(now);
+      setLastExport(now);
+      toast.success("Export CSV téléchargé");
+    } catch {
+      toast.error("Échec de l'export CSV");
+    }
+  };
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const result = parseBackup(text);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setPending({ summary: result.summary, applications: result.applications });
+    } catch {
+      toast.error("Impossible de lire le fichier.");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const confirmImport = () => {
+    if (!pending) return;
+    const saved = writeSafetyBackup();
+    try {
+      replaceAllApplications(pending.applications);
+      toast.success(
+        `${pending.applications.length} candidature(s) importée(s)${saved ? " — sauvegarde de sécurité créée" : ""}`,
+      );
+    } catch {
+      toast.error("Import échoué : vos données actuelles sont conservées.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <dl className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border p-3">
+          <dt className="text-xs text-muted-foreground">Candidatures</dt>
+          <dd className="text-lg font-semibold">{applications.length}</dd>
+        </div>
+        <div className="rounded-lg border p-3">
+          <dt className="text-xs text-muted-foreground">Relances</dt>
+          <dd className="text-lg font-semibold">{followUpCount}</dd>
+        </div>
+        <div className="rounded-lg border p-3">
+          <dt className="text-xs text-muted-foreground">Dernier export</dt>
+          <dd className="text-sm font-medium">{lastExport ? formatDate(lastExport) : "Jamais"}</dd>
+        </div>
+      </dl>
+
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={handleExportJson}>
+          <Download /> Exporter mes données (JSON)
+        </Button>
+        <Button variant="outline" onClick={handleExportCsv}>
+          <FileSpreadsheet /> Exporter en CSV
+        </Button>
+        <Button variant="outline" onClick={() => fileRef.current?.click()}>
+          <Upload /> Importer une sauvegarde
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+
+      <AlertDialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer l'import</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Cette sauvegarde remplacera vos données actuelles :</p>
+                <ul className="list-inside list-disc">
+                  <li>{pending?.summary.applications ?? 0} candidature(s)</li>
+                  <li>{pending?.summary.followUps ?? 0} relance(s)</li>
+                  <li>{pending?.summary.statusEntries ?? 0} entrée(s) d'historique</li>
+                  <li>
+                    Exportée le {pending ? formatDate(pending.summary.exportedAt) : ""} (format v
+                    {pending?.summary.version})
+                  </li>
+                </ul>
+                <p>Une sauvegarde de vos données actuelles sera créée automatiquement.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>Importer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
