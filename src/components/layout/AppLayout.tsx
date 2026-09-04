@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BarChart3,
   Briefcase,
   Building2,
   LayoutDashboard,
@@ -25,9 +26,11 @@ const NAV = [
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/emails", label: "Emails", icon: Mail },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
+
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
