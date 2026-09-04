@@ -17,6 +17,7 @@ export interface ApplicationsContextValue {
   updateFollowUp: (applicationId: string, followUpId: string, input: Partial<FollowUpInput>) => void;
   deleteFollowUp: (applicationId: string, followUpId: string) => void;
   getApplication: (id: string) => Application | undefined;
+  setApplicationContacts: (id: string, contactIds: string[]) => void;
   resetDemoData: () => void;
   replaceAllApplications: (apps: Application[]) => void;
 }
