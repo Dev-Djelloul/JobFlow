@@ -119,6 +119,7 @@ function AnalyticsPage() {
   const breakdown = useMemo(() => statusBreakdown(filtered), [filtered]);
   const series = useMemo(() => buildTimeSeries(filtered, grouping), [filtered, grouping]);
   const companiesPerf = useMemo(() => companyPerformance(filtered), [filtered]);
+  const withoutSource = applicationsWithoutSource(filtered);
   const sources = useMemo(() => sourcePerformance(filtered), [filtered]);
   const delays = useMemo(() => computeDelays(filtered), [filtered]);
 
@@ -489,25 +490,59 @@ function AnalyticsPage() {
                 <CardHeader>
                   <CardTitle className="text-base">Performance par source</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {sources.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      Le modèle de candidature ne comporte pas encore de champ « source ». Aucune
-                      donnée n'est inventée ici : dès qu'un champ source sera saisi, ce bloc
-                      affichera automatiquement les candidatures, entretiens et taux de conversion
-                      par source.
+                      Aucune candidature ne comporte encore de source. Renseignez le champ
+                      « Source » dans le formulaire de candidature (ou lors d'un import CSV) pour
+                      voir ici les volumes, taux d'entretien, taux d'offre et délais par canal.
                     </p>
                   ) : (
-                    <ul className="space-y-2">
-                      {sources.map((s) => (
-                        <li key={s.source} className="flex items-center justify-between gap-3 text-sm">
-                          <span className="min-w-0 truncate">{s.source}</span>
-                          <span className="shrink-0 tabular-nums text-muted-foreground">
-                            {s.total} cand. · {s.interviews} entr. · {formatRate(s.interviewRate)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                              <th className="py-2 pr-3 font-medium">Source</th>
+                              <th className="py-2 pr-3 text-right font-medium">Cand.</th>
+                              <th className="py-2 pr-3 text-right font-medium">Entretiens</th>
+                              <th className="py-2 pr-3 text-right font-medium">Offres</th>
+                              <th className="py-2 pr-3 text-right font-medium">Taux entr.</th>
+                              <th className="py-2 pr-3 text-right font-medium">Taux offre</th>
+                              <th className="py-2 text-right font-medium">Délai entr.</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sources.map((s) => (
+                              <tr key={s.source} className="border-b last:border-0">
+                                <td className="py-2 pr-3">{s.label}</td>
+                                <td className="py-2 pr-3 text-right tabular-nums">{s.total}</td>
+                                <td className="py-2 pr-3 text-right tabular-nums">{s.interviews}</td>
+                                <td className="py-2 pr-3 text-right tabular-nums">{s.offers}</td>
+                                <td className="py-2 pr-3 text-right tabular-nums">
+                                  {s.interviewRate === null ? "N/A" : formatRate(s.interviewRate)}
+                                </td>
+                                <td className="py-2 pr-3 text-right tabular-nums">
+                                  {s.offerRate === null ? "N/A" : formatRate(s.offerRate)}
+                                </td>
+                                <td className="py-2 text-right tabular-nums">
+                                  {s.averageInterviewDelay === null
+                                    ? "N/A"
+                                    : `${s.averageInterviewDelay} j`}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Les taux passent à « N/A » en dessous de {MIN_SOURCE_SAMPLE} candidatures :
+                        l'échantillon serait trop faible pour être interprété.
+                        {withoutSource > 0
+                          ? ` ${withoutSource} candidature${withoutSource > 1 ? "s" : ""} sans source ${withoutSource > 1 ? "sont exclues" : "est exclue"} de ce tableau.`
+                          : ""}
+                      </p>
+                    </>
                   )}
                 </CardContent>
               </Card>
