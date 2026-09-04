@@ -286,6 +286,14 @@ function ContactDetailPage() {
         }}
       />
 
+      <EmailComposer
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        contactId={contact.id}
+        applicationId={relatedApps[0]?.id ?? null}
+        templateId="sys-prise-de-contact"
+      />
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
