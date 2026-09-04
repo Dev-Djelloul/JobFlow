@@ -86,6 +86,9 @@ function DashboardPage() {
   const actionSummary = summarizeActions(allActions);
   const nextActions = allActions.slice(0, 5);
   const summary = analyticsSummary(applications);
+  const insights = buildApplicationInsights(applications, contacts);
+  const insightSummary = summarizeInsights(insights);
+  const topInsights = insights.slice(0, 5);
 
   return (
     <AppLayout
