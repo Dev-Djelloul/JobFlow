@@ -1,12 +1,14 @@
 import { z } from "zod";
 import type { Application } from "@/types/application";
 import type { Contact } from "@/types/contact";
+import type { EmailTemplate } from "@/types/email";
+import { EMAIL_VARIABLES } from "@/types/email";
 import { CONTRACT_TYPES, FOLLOW_UP_STATUSES, STATUSES } from "@/types/application";
 
 export const BACKUP_FORMAT = "jobflow.backup";
-export const BACKUP_VERSION = 2;
+export const BACKUP_VERSION = 3;
 /** Versions du format que l'import sait lire. */
-export const SUPPORTED_VERSIONS = [1, 2];
+export const SUPPORTED_VERSIONS = [1, 2, 3];
 
 const statusSchema = z.enum(STATUSES);
 const contractSchema = z.enum(CONTRACT_TYPES);
@@ -43,6 +45,18 @@ const contactSchema = z.object({
   updated_at: dateish.default(""),
 });
 
+const emailTemplateSchema = z.object({
+  id: z.string().min(1).max(120),
+  name: z.string().max(160).default(""),
+  description: z.string().max(500).default(""),
+  subject: z.string().max(500).default(""),
+  body: z.string().max(20000).default(""),
+  variables: z.array(z.enum(EMAIL_VARIABLES)).default([]),
+  system: z.boolean().default(false),
+  created_at: dateish.default(""),
+  updated_at: dateish.default(""),
+});
+
 const applicationSchema = z.object({
   id: z.string().min(1).max(120),
   company: z.string().max(200).default(""),
@@ -72,6 +86,8 @@ export const backupSchema = z.object({
     applications: z.array(applicationSchema),
     /** Ajouté en v2 : absent des sauvegardes v1, qui restent importables. */
     contacts: z.array(contactSchema).default([]),
+    /** Ajouté en v3 : modèles personnalisés et surcharges de modèles système. */
+    email_templates: z.array(emailTemplateSchema).default([]),
     settings: z
       .object({
         name: z.string().max(200).optional(),
@@ -91,6 +107,7 @@ export interface BackupSummary {
   version: number;
   applications: number;
   contacts: number;
+  emailTemplates: number;
   followUps: number;
   statusEntries: number;
 }
@@ -101,6 +118,7 @@ export type ParseResult =
       backup: BackupFile;
       applications: Application[];
       contacts: Contact[];
+      emailTemplates: EmailTemplate[];
       summary: BackupSummary;
     }
   | { ok: false; error: string };
@@ -109,13 +127,14 @@ export function buildBackup(
   applications: Application[],
   contacts: Contact[] = [],
   settings?: BackupFile["data"]["settings"],
+  emailTemplates: EmailTemplate[] = [],
 ): BackupFile {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exported_at: new Date().toISOString(),
     app: "JobFlow",
-    data: { applications, contacts, settings },
+    data: { applications, contacts, email_templates: emailTemplates, settings },
   };
 }
 
@@ -156,6 +175,7 @@ export function parseBackup(raw: string): ParseResult {
 
   const applications = parsed.data.data.applications as Application[];
   const contacts = (parsed.data.data.contacts ?? []) as Contact[];
+  const emailTemplates = (parsed.data.data.email_templates ?? []) as EmailTemplate[];
   const contactIds = new Set(contacts.map((c) => c.id));
   if (contactIds.size !== contacts.length) {
     return { ok: false, error: "Données corrompues : identifiants de contacts en double." };
@@ -174,11 +194,13 @@ export function parseBackup(raw: string): ParseResult {
     backup: parsed.data,
     applications,
     contacts,
+    emailTemplates,
     summary: {
       exportedAt: parsed.data.exported_at,
       version: parsed.data.version,
       applications: applications.length,
       contacts: contacts.length,
+      emailTemplates: emailTemplates.length,
       followUps: applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0),
       statusEntries: applications.reduce((n, a) => n + (a.status_history?.length ?? 0), 0),
     },

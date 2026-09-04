@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Building2, CalendarClock, Pencil, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarClock, Mail, Pencil, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ContactForm } from "@/components/contacts/ContactForm";
 import { ContactActions } from "@/components/contacts/ContactActions";
+import { EmailComposer } from "@/components/email/EmailComposer";
 import { useContacts } from "@/hooks/useContacts";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
@@ -70,6 +71,7 @@ function ContactDetailPage() {
   const dialogs = useApplicationDialogs();
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const navigate = Route.useNavigate();
 
   const contact = contacts.find((c) => c.id === contactId);
@@ -142,7 +144,11 @@ function ContactDetailPage() {
               </CardTitle>
               <CardDescription>Coordonnées et notes personnelles.</CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => setEmailOpen(true)}>
+                <Mail className="size-4" />
+                <span className="hidden sm:inline">Écrire un email</span>
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                 <Pencil className="size-4" />
                 <span className="hidden sm:inline">Modifier</span>
@@ -278,6 +284,14 @@ function ContactDetailPage() {
           setEditOpen(false);
           toast.success("Contact mis à jour");
         }}
+      />
+
+      <EmailComposer
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        contactId={contact.id}
+        applicationId={relatedApps[0]?.id ?? null}
+        templateId="sys-prise-de-contact"
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

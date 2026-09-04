@@ -27,10 +27,13 @@ import {
 } from "@/lib/backup";
 import { STATUS_LABELS, type Application } from "@/types/application";
 import type { Contact } from "@/types/contact";
+import type { EmailTemplate } from "@/types/email";
+import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 
 export function DataBackupSection() {
   const { applications, replaceAllApplications } = useApplications();
   const { contacts, replaceAllContacts } = useContacts();
+  const { storedTemplates, replaceAllTemplates } = useEmailTemplates();
   const { settings } = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   // Lu après hydratation : localStorage n'existe pas côté serveur.
@@ -40,13 +43,14 @@ export function DataBackupSection() {
     summary: BackupSummary;
     applications: Application[];
     contacts: Contact[];
+    emailTemplates: EmailTemplate[];
   } | null>(null);
 
   const followUpCount = applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0);
 
   const handleExportJson = () => {
     try {
-      const backup = buildBackup(applications, contacts, settings);
+      const backup = buildBackup(applications, contacts, settings, storedTemplates);
       downloadJsonBackup(backup);
       saveLastExportAt(backup.exported_at);
       setLastExport(backup.exported_at);
@@ -81,6 +85,7 @@ export function DataBackupSection() {
         summary: result.summary,
         applications: result.applications,
         contacts: result.contacts,
+        emailTemplates: result.emailTemplates,
       });
     } catch {
       toast.error("Impossible de lire le fichier.");
@@ -95,6 +100,7 @@ export function DataBackupSection() {
     try {
       replaceAllApplications(pending.applications);
       replaceAllContacts(pending.contacts);
+      replaceAllTemplates(pending.emailTemplates);
       toast.success(
         `${pending.applications.length} candidature(s) et ${pending.contacts.length} contact(s) importés${saved ? " — sauvegarde de sécurité créée" : ""}`,
       );
@@ -155,6 +161,7 @@ export function DataBackupSection() {
                 <ul className="list-inside list-disc">
                   <li>{pending?.summary.applications ?? 0} candidature(s)</li>
                   <li>{pending?.summary.contacts ?? 0} contact(s)</li>
+                  <li>{pending?.summary.emailTemplates ?? 0} modèle(s) d'email personnalisé(s)</li>
                   <li>{pending?.summary.followUps ?? 0} relance(s)</li>
                   <li>{pending?.summary.statusEntries ?? 0} entrée(s) d'historique</li>
                   <li>

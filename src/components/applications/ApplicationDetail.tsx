@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Mail, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "./StatusBadge";
 import { FollowUpSection } from "./FollowUpSection";
+import { EmailComposer } from "@/components/email/EmailComposer";
+import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import {
@@ -65,6 +67,7 @@ export function ApplicationDetail({
   onStatusChange,
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   if (!application) return null;
 
   return (
@@ -163,12 +166,23 @@ export function ApplicationDetail({
             <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
               <Trash2 className="size-4" /> Supprimer
             </Button>
+            <Button variant="outline" onClick={() => setEmailOpen(true)}>
+              <Mail className="size-4" /> Écrire un email
+            </Button>
             <Button onClick={() => onEdit(application)}>
               <Pencil className="size-4" /> Modifier
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EmailComposer
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        applicationId={application.id}
+        contactId={application.contact_ids?.[0] ?? null}
+        templateId={suggestTemplateId({ application })}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
