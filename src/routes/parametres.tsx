@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DataBackupSection } from "@/components/settings/DataBackupSection";
 import { useSettings } from "@/hooks/useSettings";
 import { useApplications } from "@/hooks/useApplications";
 import type { UserSettings } from "@/types/application";
