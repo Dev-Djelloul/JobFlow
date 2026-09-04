@@ -29,9 +29,23 @@ export const ACTION_BUCKET_BADGE: Record<ActionBucket, string> = {
   later: "bg-muted text-muted-foreground border-border",
 };
 
+/**
+ * Modèle DERIVE (jamais persisté) décrivant une action et surtout sa donnée source.
+ *
+ * Sources possibles :
+ * - `follow_up`  → `Application.follow_ups[]` (donnée structurée, prioritaire) ;
+ * - `next_action`→ `Application.next_action` + `Application.follow_up_date`
+ *                  (ancien mécanisme, conservé pour compatibilité).
+ *
+ * `sourceType`, `applicationId` et `followUpId` permettent aux boutons
+ * Modifier / Marquer effectuée / Supprimer de cibler la vraie donnée.
+ */
 export interface ActionItem {
   id: string;
   source: ActionSource;
+  sourceType: "application" | "follow_up";
+  applicationId: string;
+  followUpId?: string;
   title: string;
   description: string;
   /** Date ISO courte (yyyy-mm-dd) ou "" si non planifiée. */
