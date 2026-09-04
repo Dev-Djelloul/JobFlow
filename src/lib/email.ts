@@ -40,8 +40,12 @@ export function renderTemplate(text: string, values: EmailVariableValues): strin
     .map((line) =>
       line
         .replace(/[ \t]{2,}/g, " ")
-        .replace(/\s+([,.;:!?])/g, "$1")
-        .replace(/([,;:])\s*([,.;:])/g, "$2")
+        // Espace fine avant ? ! ; : conservée (typographie française).
+        .replace(/[ \t]+([,.])/g, "$1")
+        .replace(/([,;:])[ \t]*([,.;:])/g, "$2")
+        // Préposition orpheline laissée par une variable sans valeur.
+        .replace(/\b(en votre qualité de|de|du|des|au|aux|à)\s+(?=chez\b|[,.])/gi, "")
+        .replace(/\(\s*\)/g, "")
         .replace(/\s+$/g, ""),
     )
     .join("\n")
