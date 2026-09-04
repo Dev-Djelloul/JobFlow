@@ -1,11 +1,13 @@
 import type { Application, UserSettings } from "@/types/application";
 import type { Contact } from "@/types/contact";
+import type { EmailTemplate } from "@/types/email";
 import { seedApplications } from "./seed-data";
 import { seedContacts } from "./seed-contacts";
 
 const APPS_KEY = "jobflow.applications.v1";
 const CONTACTS_KEY = "jobflow.contacts.v1";
 const SETTINGS_KEY = "jobflow.settings.v1";
+const EMAIL_TEMPLATES_KEY = "jobflow.emailTemplates.v1";
 
 export const defaultSettings: UserSettings = {
   name: "Camille Moreau",
@@ -70,6 +72,44 @@ export function saveContacts(contacts: Contact[]): void {
   }
 }
 
+/** Modèles d'emails personnalisés uniquement (les modèles système sont recréés au besoin). */
+export function loadCustomEmailTemplates(): EmailTemplate[] {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(EMAIL_TEMPLATES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as EmailTemplate[];
+    return Array.isArray(parsed) ? normalizeEmailTemplates(parsed) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function normalizeEmailTemplates(list: EmailTemplate[]): EmailTemplate[] {
+  return list
+    .filter((t) => t && typeof t === "object" && typeof t.id === "string")
+    .map((t) => ({
+      id: t.id,
+      name: t.name ?? "",
+      description: t.description ?? "",
+      subject: t.subject ?? "",
+      body: t.body ?? "",
+      variables: Array.isArray(t.variables) ? t.variables : [],
+      system: t.system === true,
+      created_at: t.created_at ?? "",
+      updated_at: t.updated_at ?? "",
+    }));
+}
+
+export function saveCustomEmailTemplates(templates: EmailTemplate[]): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(EMAIL_TEMPLATES_KEY, JSON.stringify(templates));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function loadApplications(): Application[] {
   if (!isBrowser()) return seedApplications;
   try {
@@ -118,6 +158,7 @@ export function writeSafetyBackup(): boolean {
         saved_at: new Date().toISOString(),
         applications: loadApplications(),
         contacts: loadContacts(),
+        email_templates: loadCustomEmailTemplates(),
       }),
     );
     return true;
