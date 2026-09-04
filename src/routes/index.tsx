@@ -164,6 +164,30 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
+          <Card className="rounded-xl shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+              <CardTitle className="text-base">Analytics</CardTitle>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/analytics">Voir les analytics</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[
+                { label: "Candidatures", value: `${summary.total}` },
+                { label: "Entretiens", value: `${summary.interviews}` },
+                { label: "Offres", value: `${summary.offers}` },
+                { label: "Taux d'entretien", value: formatRate(summary.interviewRate) },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className="mt-1 font-display text-xl font-bold tabular-nums">{item.value}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+
+
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="rounded-xl shadow-none">
               <CardHeader>
