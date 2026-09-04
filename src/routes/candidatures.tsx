@@ -28,7 +28,14 @@ import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { formatDate } from "@/lib/format";
-import { CONTRACT_TYPES, STATUSES, STATUS_LABELS } from "@/types/application";
+import {
+  APPLICATION_SOURCES,
+  CONTRACT_TYPES,
+  SOURCE_LABELS,
+  sourceLabel,
+  STATUSES,
+  STATUS_LABELS,
+} from "@/types/application";
 
 export const Route = createFileRoute("/candidatures")({
   head: () => ({
@@ -55,6 +62,7 @@ function ApplicationsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [contract, setContract] = useState("all");
+  const [source, setSource] = useState("all");
   const [sortDesc, setSortDesc] = useState(true);
 
   const filtered = useMemo(() => {
@@ -62,6 +70,9 @@ function ApplicationsPage() {
     return applications
       .filter((a) => (status === "all" ? true : a.status === status))
       .filter((a) => (contract === "all" ? true : a.contract_type === contract))
+      .filter((a) =>
+        source === "all" ? true : source === "none" ? !a.source : a.source === source,
+      )
       .filter((a) =>
         q === ""
           ? true
@@ -71,7 +82,7 @@ function ApplicationsPage() {
         const cmp = (a.application_date || "").localeCompare(b.application_date || "");
         return sortDesc ? -cmp : cmp;
       });
-  }, [applications, search, status, contract, sortDesc]);
+  }, [applications, search, status, contract, source, sortDesc]);
 
   return (
     <AppLayout
@@ -88,7 +99,7 @@ function ApplicationsPage() {
         <LoadingState rows={8} />
       ) : (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -108,6 +119,20 @@ function ApplicationsPage() {
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
                     {STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={source} onValueChange={setSource}>
+              <SelectTrigger aria-label="Filtrer par source">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les sources</SelectItem>
+                <SelectItem value="none">Sans source</SelectItem>
+                {APPLICATION_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {SOURCE_LABELS[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -167,6 +192,7 @@ function ApplicationsPage() {
                       <TableHead>Entreprise</TableHead>
                       <TableHead>Poste</TableHead>
                       <TableHead className="hidden md:table-cell">Localisation</TableHead>
+                      <TableHead className="hidden xl:table-cell">Source</TableHead>
                       <TableHead className="hidden sm:table-cell">Date</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="hidden lg:table-cell">Prochaine action</TableHead>
@@ -187,6 +213,9 @@ function ApplicationsPage() {
                           </span>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">{app.location || "—"}</TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          {sourceLabel(app.source) || "—"}
+                        </TableCell>
                         <TableCell className="hidden whitespace-nowrap sm:table-cell">
                           {formatDate(app.application_date)}
                         </TableCell>
