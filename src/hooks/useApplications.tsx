@@ -148,8 +148,9 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       deleteFollowUp,
       getApplication,
       resetDemoData,
+      replaceAllApplications,
     }),
-    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData],
+    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData, replaceAllApplications],
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;
