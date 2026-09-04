@@ -1,14 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { UserSettings } from "@/types/application";
 import { defaultSettings, loadSettings, saveSettings } from "@/lib/storage";
+import { SettingsContext } from "./settings-context";
 
-interface SettingsContextValue {
-  settings: UserSettings;
-  updateSettings: (patch: Partial<UserSettings>) => void;
-  hydrated: boolean;
-}
-
-const SettingsContext = createContext<SettingsContextValue | null>(null);
+export { useSettings } from "./settings-context";
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -35,10 +30,4 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({ settings, updateSettings, hydrated }), [settings, updateSettings, hydrated]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
-}
-
-export function useSettings() {
-  const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
-  return ctx;
 }
