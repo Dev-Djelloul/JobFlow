@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SettingsProvider } from "@/hooks/useSettings";
 import { ApplicationsProvider } from "@/hooks/useApplications";
 import { ContactsProvider } from "@/hooks/useContacts";
+import { EmailTemplatesProvider } from "@/hooks/useEmailTemplates";
 
 
 function NotFoundComponent() {
@@ -139,9 +140,11 @@ function RootComponent() {
       <SettingsProvider>
         <ApplicationsProvider>
           <ContactsProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-            <Toaster position="top-right" richColors />
+            <EmailTemplatesProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <Toaster position="top-right" richColors />
+            </EmailTemplatesProvider>
           </ContactsProvider>
         </ApplicationsProvider>
       </SettingsProvider>
