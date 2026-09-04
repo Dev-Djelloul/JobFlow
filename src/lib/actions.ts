@@ -101,6 +101,9 @@ export function buildActions(
       items.push({
         id: `fu-${followUp.id}`,
         source: "follow_up",
+        sourceType: "follow_up",
+        applicationId: application.id,
+        followUpId: followUp.id,
         title: followUp.title || "Relance",
         description: followUp.description ?? "",
         date: followUp.date ?? "",
@@ -113,16 +116,19 @@ export function buildActions(
 
     // Action portée par la candidature elle-même (next_action + follow_up_date).
     if (application.next_action && application.status !== "rejected") {
-      const duplicate = openFollowUps.some(
-        (f) =>
-          normalize(f.title) === normalize(application.next_action) &&
-          (!application.follow_up_date || f.date === application.follow_up_date),
+      // Anti-doublon : la relance (donnée structurée) prime toujours sur next_action,
+      // quel que soit son statut (à faire, effectuée ou annulée) dès que le titre
+      // correspond, ou que la paire titre + date correspond.
+      const duplicate = (application.follow_ups ?? []).some(
+        (f) => normalize(f.title) === normalize(application.next_action),
       );
       if (!duplicate) {
         const date = application.follow_up_date ?? "";
         items.push({
           id: `na-${application.id}`,
           source: "next_action",
+          sourceType: "application",
+          applicationId: application.id,
           title: application.next_action,
           description: "",
           date,
