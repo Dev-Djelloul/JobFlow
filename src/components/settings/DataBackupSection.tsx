@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,9 @@ export function DataBackupSection() {
   const { contacts, replaceAllContacts } = useContacts();
   const { settings } = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [lastExport, setLastExport] = useState<string | null>(() => loadLastExportAt());
+  // Lu après hydratation : localStorage n'existe pas côté serveur.
+  const [lastExport, setLastExport] = useState<string | null>(null);
+  useEffect(() => setLastExport(loadLastExportAt()), []);
   const [pending, setPending] = useState<{
     summary: BackupSummary;
     applications: Application[];
