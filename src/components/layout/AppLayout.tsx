@@ -23,6 +23,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
   { to: "/actions", label: "Actions", icon: ListTodo },
+  { to: "/intelligence", label: "À votre attention", icon: Sparkles },
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/emails", label: "Emails", icon: Mail },
