@@ -1,11 +1,12 @@
 import { z } from "zod";
 import type { Application } from "@/types/application";
+import type { Contact } from "@/types/contact";
 import { CONTRACT_TYPES, FOLLOW_UP_STATUSES, STATUSES } from "@/types/application";
 
 export const BACKUP_FORMAT = "jobflow.backup";
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 /** Versions du format que l'import sait lire. */
-export const SUPPORTED_VERSIONS = [1];
+export const SUPPORTED_VERSIONS = [1, 2];
 
 const statusSchema = z.enum(STATUSES);
 const contractSchema = z.enum(CONTRACT_TYPES);
@@ -28,6 +29,20 @@ const followUpSchema = z.object({
   updated_at: dateish.default(""),
 });
 
+const contactSchema = z.object({
+  id: z.string().min(1).max(120),
+  first_name: z.string().max(120).default(""),
+  last_name: z.string().max(120).default(""),
+  email: z.string().max(320).default(""),
+  phone: z.string().max(60).default(""),
+  job_title: z.string().max(160).default(""),
+  linkedin_url: z.string().max(2000).default(""),
+  notes: z.string().max(10000).default(""),
+  company: z.string().max(200).default(""),
+  created_at: dateish.default(""),
+  updated_at: dateish.default(""),
+});
+
 const applicationSchema = z.object({
   id: z.string().min(1).max(120),
   company: z.string().max(200).default(""),
@@ -43,6 +58,7 @@ const applicationSchema = z.object({
   follow_up_date: dateish.default(""),
   status_history: z.array(statusHistorySchema).default([]),
   follow_ups: z.array(followUpSchema).default([]),
+  contact_ids: z.array(z.string().min(1).max(120)).default([]),
   created_at: dateish.default(""),
   updated_at: dateish.default(""),
 });
@@ -54,6 +70,8 @@ export const backupSchema = z.object({
   app: z.string().optional(),
   data: z.object({
     applications: z.array(applicationSchema),
+    /** Ajouté en v2 : absent des sauvegardes v1, qui restent importables. */
+    contacts: z.array(contactSchema).default([]),
     settings: z
       .object({
         name: z.string().max(200).optional(),
@@ -72,16 +90,24 @@ export interface BackupSummary {
   exportedAt: string;
   version: number;
   applications: number;
+  contacts: number;
   followUps: number;
   statusEntries: number;
 }
 
 export type ParseResult =
-  | { ok: true; backup: BackupFile; applications: Application[]; summary: BackupSummary }
+  | {
+      ok: true;
+      backup: BackupFile;
+      applications: Application[];
+      contacts: Contact[];
+      summary: BackupSummary;
+    }
   | { ok: false; error: string };
 
 export function buildBackup(
   applications: Application[],
+  contacts: Contact[] = [],
   settings?: BackupFile["data"]["settings"],
 ): BackupFile {
   return {
@@ -89,7 +115,7 @@ export function buildBackup(
     version: BACKUP_VERSION,
     exported_at: new Date().toISOString(),
     app: "JobFlow",
-    data: { applications, settings },
+    data: { applications, contacts, settings },
   };
 }
 
@@ -129,6 +155,15 @@ export function parseBackup(raw: string): ParseResult {
   }
 
   const applications = parsed.data.data.applications as Application[];
+  const contacts = (parsed.data.data.contacts ?? []) as Contact[];
+  const contactIds = new Set(contacts.map((c) => c.id));
+  if (contactIds.size !== contacts.length) {
+    return { ok: false, error: "Données corrompues : identifiants de contacts en double." };
+  }
+  // Les associations pointant vers un contact absent sont ignorées (rétrocompatible).
+  for (const app of applications) {
+    app.contact_ids = (app.contact_ids ?? []).filter((id) => contactIds.has(id));
+  }
   const ids = new Set(applications.map((a) => a.id));
   if (ids.size !== applications.length) {
     return { ok: false, error: "Données corrompues : identifiants de candidatures en double." };
@@ -138,10 +173,12 @@ export function parseBackup(raw: string): ParseResult {
     ok: true,
     backup: parsed.data,
     applications,
+    contacts,
     summary: {
       exportedAt: parsed.data.exported_at,
       version: parsed.data.version,
       applications: applications.length,
+      contacts: contacts.length,
       followUps: applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0),
       statusEntries: applications.reduce((n, a) => n + (a.status_history?.length ?? 0), 0),
     },

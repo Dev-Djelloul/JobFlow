@@ -49,13 +49,16 @@ export interface Application {
   follow_up_date: string;
   status_history: StatusHistoryEntry[];
   follow_ups: FollowUp[];
+  /** Identifiants des contacts associés (même entreprise uniquement). */
+  contact_ids: string[];
   created_at: string;
   updated_at: string;
 }
 
 export type ApplicationInput = Omit<
   Application,
-  "id" | "created_at" | "updated_at" | "status_history" | "follow_ups"
+  "id" | "created_at" | "updated_at" | "status_history" | "follow_ups" | "contact_ids"
+
 >;
 
 export interface UserSettings {

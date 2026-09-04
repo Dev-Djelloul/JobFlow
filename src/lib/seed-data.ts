@@ -32,6 +32,7 @@ const make = (
   next_action,
   follow_up_date: iso(daysAgo - followInDays),
   follow_ups: [],
+  contact_ids: [],
   status_history:
     status === "applied"
       ? [{ status: "applied" as const, date: iso(daysAgo) }]

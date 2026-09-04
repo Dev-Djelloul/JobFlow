@@ -40,6 +40,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
         id: newId(),
         status_history: [{ status: input.status, date: now.slice(0, 10) }],
         follow_ups: [],
+        contact_ids: [],
         created_at: now,
         updated_at: now,
       };
@@ -125,6 +126,19 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     [applications],
   );
 
+  const setApplicationContacts = useCallback(
+    (id: string, contactIds: string[]) => {
+      persist(
+        applications.map((a) =>
+          a.id === id
+            ? { ...a, contact_ids: [...new Set(contactIds)], updated_at: new Date().toISOString() }
+            : a,
+        ),
+      );
+    },
+    [applications, persist],
+  );
+
   const replaceAllApplications = useCallback(
     (apps: Application[]) => persist(apps),
     [persist],
@@ -147,10 +161,11 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       updateFollowUp,
       deleteFollowUp,
       getApplication,
+      setApplicationContacts,
       resetDemoData,
       replaceAllApplications,
     }),
-    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData, replaceAllApplications],
+    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, setApplicationContacts, resetDemoData, replaceAllApplications],
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;

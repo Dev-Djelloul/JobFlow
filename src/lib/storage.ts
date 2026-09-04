@@ -1,7 +1,10 @@
 import type { Application, UserSettings } from "@/types/application";
+import type { Contact } from "@/types/contact";
 import { seedApplications } from "./seed-data";
+import { seedContacts } from "./seed-contacts";
 
 const APPS_KEY = "jobflow.applications.v1";
+const CONTACTS_KEY = "jobflow.contacts.v1";
 const SETTINGS_KEY = "jobflow.settings.v1";
 
 export const defaultSettings: UserSettings = {
@@ -20,7 +23,51 @@ function normalize(apps: Application[]): Application[] {
     ...a,
     status_history: Array.isArray(a.status_history) ? a.status_history : [],
     follow_ups: Array.isArray(a.follow_ups) ? a.follow_ups : [],
+    contact_ids: Array.isArray(a.contact_ids) ? a.contact_ids : [],
   }));
+}
+
+/** Migration rétrocompatible : les contacts sont normalisés champ par champ. */
+export function normalizeContacts(list: Contact[]): Contact[] {
+  return list
+    .filter((c) => c && typeof c === "object" && typeof c.id === "string")
+    .map((c) => ({
+      id: c.id,
+      first_name: c.first_name ?? "",
+      last_name: c.last_name ?? "",
+      email: c.email ?? "",
+      phone: c.phone ?? "",
+      job_title: c.job_title ?? "",
+      linkedin_url: c.linkedin_url ?? "",
+      notes: c.notes ?? "",
+      company: c.company ?? "",
+      created_at: c.created_at ?? "",
+      updated_at: c.updated_at ?? "",
+    }));
+}
+
+export function loadContacts(): Contact[] {
+  if (!isBrowser()) return seedContacts;
+  try {
+    const raw = window.localStorage.getItem(CONTACTS_KEY);
+    if (!raw) {
+      window.localStorage.setItem(CONTACTS_KEY, JSON.stringify(seedContacts));
+      return seedContacts;
+    }
+    const parsed = JSON.parse(raw) as Contact[];
+    return Array.isArray(parsed) ? normalizeContacts(parsed) : seedContacts;
+  } catch {
+    return seedContacts;
+  }
+}
+
+export function saveContacts(contacts: Contact[]): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+  } catch {
+    /* quota or private mode: ignore */
+  }
 }
 
 export function loadApplications(): Application[] {
@@ -67,7 +114,11 @@ export function writeSafetyBackup(): boolean {
   try {
     window.localStorage.setItem(
       SAFETY_KEY,
-      JSON.stringify({ saved_at: new Date().toISOString(), applications: loadApplications() }),
+      JSON.stringify({
+        saved_at: new Date().toISOString(),
+        applications: loadApplications(),
+        contacts: loadContacts(),
+      }),
     );
     return true;
   } catch {
@@ -75,11 +126,17 @@ export function writeSafetyBackup(): boolean {
   }
 }
 
-export function readSafetyBackup(): { saved_at: string; applications: Application[] } | null {
+export function readSafetyBackup(): {
+  saved_at: string;
+  applications: Application[];
+  contacts?: Contact[];
+} | null {
   if (!isBrowser()) return null;
   try {
     const raw = window.localStorage.getItem(SAFETY_KEY);
-    return raw ? (JSON.parse(raw) as { saved_at: string; applications: Application[] }) : null;
+    return raw
+      ? (JSON.parse(raw) as { saved_at: string; applications: Application[]; contacts?: Contact[] })
+      : null;
   } catch {
     return null;
   }

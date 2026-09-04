@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "./StatusBadge";
 import { FollowUpSection } from "./FollowUpSection";
+import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import {
   STATUSES,
@@ -132,6 +133,10 @@ export function ApplicationDetail({
               {application.notes || "Aucune note pour le moment."}
             </p>
           </div>
+
+          <Separator />
+
+          <ApplicationContactsSection application={application} />
 
           <Separator />
 
