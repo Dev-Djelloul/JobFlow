@@ -197,7 +197,7 @@ function ActionsPage() {
       <EmailComposer
         open={!!emailFor}
         onOpenChange={(o) => !o && setEmailFor(null)}
-        applicationId={emailFor?.application.id}
+        applicationId={emailFor?.application.id ?? null}
         contactId={emailFor?.contact?.id ?? null}
         templateId={suggestTemplateId({
           application: emailFor?.application ?? null,

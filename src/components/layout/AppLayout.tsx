@@ -5,6 +5,7 @@ import {
   Building2,
   LayoutDashboard,
   KanbanSquare,
+  ListTodo,
   Settings,
   Users,
   Mail,
@@ -20,6 +21,7 @@ import { useSettings } from "@/hooks/useSettings";
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
+  { to: "/actions", label: "Actions", icon: ListTodo },
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/emails", label: "Emails", icon: Mail },
