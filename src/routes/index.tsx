@@ -24,6 +24,7 @@ import {
   buildActions,
   summarizeActions,
 } from "@/lib/actions";
+import { analyticsSummary, formatRate } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { formatDate, relativeDateLabel } from "@/lib/format";
 
@@ -79,6 +80,7 @@ function DashboardPage() {
   const allActions = buildActions(applications, contacts);
   const actionSummary = summarizeActions(allActions);
   const nextActions = allActions.slice(0, 5);
+  const summary = analyticsSummary(applications);
 
   return (
     <AppLayout
