@@ -1,5 +1,5 @@
-import type { Application, ApplicationStatus } from "@/types/application";
-import { STATUSES, STATUS_LABELS } from "@/types/application";
+import type { Application, ApplicationSource, ApplicationStatus } from "@/types/application";
+import { SOURCE_LABELS, STATUSES, STATUS_LABELS } from "@/types/application";
 import { companyKey } from "./companies";
 import { daysBetween, todayKey } from "./format";
 
