@@ -19,7 +19,7 @@ export interface TimelineEvent {
   date: string;
   type: TimelineEventType;
   title: string;
-  description?: string;
+  description?: string | undefined;
   status?: ApplicationStatus;
   source: TimelineSource;
   /** Identifiant de la relance source, lorsque l'événement en provient. */
