@@ -15,6 +15,8 @@ import {
 import { useApplications } from "@/hooks/useApplications";
 import { useContacts } from "@/hooks/useContacts";
 import { useSettings } from "@/hooks/useSettings";
+import { Separator } from "@/components/ui/separator";
+import { CsvImportSection } from "./CsvImportSection";
 import { formatDate } from "@/lib/format";
 import { loadLastExportAt, saveLastExportAt, writeSafetyBackup } from "@/lib/storage";
 import {
@@ -150,6 +152,10 @@ export function DataBackupSection() {
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
       </div>
+
+      <Separator />
+
+      <CsvImportSection />
 
       <AlertDialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
