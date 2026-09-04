@@ -73,25 +73,42 @@ function SummaryCard({
 }
 
 function ActionsPage() {
-  const { applications, loading, updateFollowUp } = useApplications();
+  const { applications, loading, updateFollowUp, deleteFollowUp, updateApplication } =
+    useApplications();
   const { contacts } = useContacts();
   const dialogs = useApplicationDialogs();
-  const [emailFor, setEmailFor] = useState<ActionItem | null>(null);
-  const [editing, setEditing] = useState<ActionItem | null>(null);
+  const [emailForId, setEmailForId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const actions = useMemo(() => buildActions(applications, contacts), [applications, contacts]);
   const groups = useMemo(() => groupActions(actions), [actions]);
   const summary = summarizeActions(actions);
 
+  /** Toujours relire l'action depuis les données dérivées : aucun état local obsolète. */
+  const find = (id: string | null) => (id ? (actions.find((a) => a.id === id) ?? null) : null);
+  const emailFor = find(emailForId);
+  const editing = find(editingId);
+  const deleting = find(deletingId);
+
+  /** Vide l'ancien mécanisme d'action porté par la candidature. */
+  const clearNextAction = (applicationId: string) =>
+    updateApplication(applicationId, { next_action: "", follow_up_date: "" });
+
   const handlers = {
     onOpenApplication: (a: ActionItem) => dialogs.openDetail(a.application),
-    onEmail: (a: ActionItem) => setEmailFor(a),
+    onEmail: (a: ActionItem) => setEmailForId(a.id),
     onMarkDone: (a: ActionItem) => {
-      if (!a.followUp) return;
-      updateFollowUp(a.application.id, a.followUp.id, { status: "done" });
-      toast.success("Relance marquée comme effectuée");
+      if (a.sourceType === "follow_up" && a.followUpId) {
+        updateFollowUp(a.applicationId, a.followUpId, { status: "done" });
+        toast.success("Relance marquée comme effectuée");
+      } else {
+        clearNextAction(a.applicationId);
+        toast.success("Action marquée comme faite");
+      }
     },
-    onEdit: (a: ActionItem) => setEditing(a),
+    onEdit: (a: ActionItem) => setEditingId(a.id),
+    onDelete: (a: ActionItem) => setDeletingId(a.id),
   };
 
   return (
