@@ -25,6 +25,11 @@ import {
   summarizeActions,
 } from "@/lib/actions";
 import { analyticsSummary, formatRate } from "@/lib/analytics";
+import {
+  PRIORITY_DOTS,
+  buildApplicationInsights,
+  summarizeInsights,
+} from "@/lib/intelligence";
 import { cn } from "@/lib/utils";
 import { formatDate, relativeDateLabel } from "@/lib/format";
 
@@ -81,6 +86,9 @@ function DashboardPage() {
   const actionSummary = summarizeActions(allActions);
   const nextActions = allActions.slice(0, 5);
   const summary = analyticsSummary(applications);
+  const insights = buildApplicationInsights(applications, contacts);
+  const insightSummary = summarizeInsights(insights);
+  const topInsights = insights.slice(0, 5);
 
   return (
     <AppLayout
@@ -188,6 +196,54 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
+          <Card className="rounded-xl shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+              <CardTitle className="text-base">À votre attention</CardTitle>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/intelligence">Tout voir</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {topInsights.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="size-4 text-success" />
+                  Tout est sous contrôle.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    {insightSummary.critical} critique(s) · {insightSummary.high} prioritaire(s) ·{" "}
+                    {insightSummary.total} au total
+                  </p>
+                  {topInsights.map((insight) => (
+                    <div
+                      key={insight.id}
+                      className="flex flex-wrap items-start justify-between gap-2 border-b border-border pb-3 last:border-0 last:pb-0"
+                    >
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "mt-1.5 size-2 shrink-0 rounded-full",
+                            PRIORITY_DOTS[insight.priority],
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{insight.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {insight.application.position} · {insight.application.company}
+                          </p>
+                        </div>
+                      </div>
+                      <Button asChild size="sm" variant="ghost">
+                        <Link to="/intelligence">{insight.cta.label}</Link>
+                      </Button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
 
 
           <div className="grid gap-4 lg:grid-cols-2">
