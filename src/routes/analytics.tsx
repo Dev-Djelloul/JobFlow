@@ -35,6 +35,7 @@ import {
   companyPerformance,
   computeDelays,
   computeKpis,
+  filterApplications,
   formatRate,
   sourcePerformance,
   statusBreakdown,
@@ -111,22 +112,7 @@ function AnalyticsPage() {
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "fr"));
   }, [applications]);
 
-  const filtered = useMemo(
-    () =>
-      applications.filter((app) => {
-        if (filters.status !== "all" && app.status !== filters.status) return false;
-        if (filters.company !== "all" && companyKey(app.company) !== filters.company) return false;
-        if (filters.period !== "all") {
-          if (!app.application_date) return false;
-          const days = Math.round(
-            (Date.now() - new Date(`${app.application_date}T00:00:00`).getTime()) / 86400000,
-          );
-          if (days > Number(filters.period) || days < 0) return false;
-        }
-        return true;
-      }),
-    [applications, filters],
-  );
+  const filtered = useMemo(() => filterApplications(applications, filters), [applications, filters]);
 
   const kpis = useMemo(() => computeKpis(filtered), [filtered]);
   const funnel = useMemo(() => buildFunnel(filtered), [filtered]);
