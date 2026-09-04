@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CandidaturesRouteImport } from './routes/candidatures'
 import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as ParametresRouteImport } from './routes/parametres'
+import { Route as EntreprisesIndexRouteImport } from './routes/entreprises.index'
+import { Route as EntreprisesCompanyRouteImport } from './routes/entreprises.$company'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const ParametresRoute = ParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntreprisesIndexRoute = EntreprisesIndexRouteImport.update({
+  id: '/entreprises/',
+  path: '/entreprises/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntreprisesCompanyRoute = EntreprisesCompanyRouteImport.update({
+  id: '/entreprises/$company',
+  path: '/entreprises/$company',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises/$company': typeof EntreprisesCompanyRoute
+  '/entreprises/': typeof EntreprisesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises/$company': typeof EntreprisesCompanyRoute
+  '/entreprises': typeof EntreprisesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises/$company': typeof EntreprisesCompanyRoute
+  '/entreprises/': typeof EntreprisesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/candidatures' | '/kanban' | '/parametres'
+  fullPaths:
+    | '/'
+    | '/candidatures'
+    | '/kanban'
+    | '/parametres'
+    | '/entreprises/$company'
+    | '/entreprises/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/candidatures' | '/kanban' | '/parametres'
-  id: '__root__' | '/' | '/candidatures' | '/kanban' | '/parametres'
+  to:
+    | '/'
+    | '/candidatures'
+    | '/kanban'
+    | '/parametres'
+    | '/entreprises/$company'
+    | '/entreprises'
+  id:
+    | '__root__'
+    | '/'
+    | '/candidatures'
+    | '/kanban'
+    | '/parametres'
+    | '/entreprises/$company'
+    | '/entreprises/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   CandidaturesRoute: typeof CandidaturesRoute
   KanbanRoute: typeof KanbanRoute
   ParametresRoute: typeof ParametresRoute
+  EntreprisesCompanyRoute: typeof EntreprisesCompanyRoute
+  EntreprisesIndexRoute: typeof EntreprisesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParametresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/entreprises/': {
+      id: '/entreprises/'
+      path: '/entreprises'
+      fullPath: '/entreprises/'
+      preLoaderRoute: typeof EntreprisesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entreprises/$company': {
+      id: '/entreprises/$company'
+      path: '/entreprises/$company'
+      fullPath: '/entreprises/$company'
+      preLoaderRoute: typeof EntreprisesCompanyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   CandidaturesRoute: CandidaturesRoute,
   KanbanRoute: KanbanRoute,
   ParametresRoute: ParametresRoute,
+  EntreprisesCompanyRoute: EntreprisesCompanyRoute,
+  EntreprisesIndexRoute: EntreprisesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
