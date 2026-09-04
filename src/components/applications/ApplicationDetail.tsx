@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "./StatusBadge";
 import { FollowUpSection } from "./FollowUpSection";
+import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
@@ -146,6 +147,11 @@ export function ApplicationDetail({
           <FollowUpSection application={application} />
 
           <Separator />
+
+          <ApplicationTimeline application={application} />
+
+          <Separator />
+
 
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
