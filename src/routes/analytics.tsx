@@ -305,6 +305,8 @@ function AnalyticsPage() {
                             data={breakdown}
                             dataKey="count"
                             nameKey="label"
+                            cx="50%"
+                            cy="50%"
                             innerRadius={45}
                             outerRadius={75}
                             paddingAngle={2}
