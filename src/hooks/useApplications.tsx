@@ -125,6 +125,11 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     [applications],
   );
 
+  const replaceAllApplications = useCallback(
+    (apps: Application[]) => persist(apps),
+    [persist],
+  );
+
   const resetDemoData = useCallback(() => {
     if (typeof window !== "undefined") window.localStorage.removeItem("jobflow.applications.v1");
     setApplications(loadApplications());
@@ -143,8 +148,9 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       deleteFollowUp,
       getApplication,
       resetDemoData,
+      replaceAllApplications,
     }),
-    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData],
+    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, resetDemoData, replaceAllApplications],
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;

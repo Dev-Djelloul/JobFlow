@@ -18,6 +18,7 @@ export interface ApplicationsContextValue {
   deleteFollowUp: (applicationId: string, followUpId: string) => void;
   getApplication: (id: string) => Application | undefined;
   resetDemoData: () => void;
+  replaceAllApplications: (apps: Application[]) => void;
 }
 
 export const ApplicationsContext = createContext<ApplicationsContextValue | null>(null);

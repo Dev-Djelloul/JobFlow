@@ -58,6 +58,47 @@ export function loadSettings(): UserSettings {
   }
 }
 
+const SAFETY_KEY = "jobflow.applications.backup.v1";
+const LAST_EXPORT_KEY = "jobflow.lastExport.v1";
+
+/** Copie de sécurité des données actuelles, écrite avant tout import. */
+export function writeSafetyBackup(): boolean {
+  if (!isBrowser()) return false;
+  try {
+    window.localStorage.setItem(
+      SAFETY_KEY,
+      JSON.stringify({ saved_at: new Date().toISOString(), applications: loadApplications() }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readSafetyBackup(): { saved_at: string; applications: Application[] } | null {
+  if (!isBrowser()) return null;
+  try {
+    const raw = window.localStorage.getItem(SAFETY_KEY);
+    return raw ? (JSON.parse(raw) as { saved_at: string; applications: Application[] }) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function loadLastExportAt(): string | null {
+  if (!isBrowser()) return null;
+  return window.localStorage.getItem(LAST_EXPORT_KEY);
+}
+
+export function saveLastExportAt(value: string): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(LAST_EXPORT_KEY, value);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function saveSettings(settings: UserSettings): void {
   if (!isBrowser()) return;
   try {

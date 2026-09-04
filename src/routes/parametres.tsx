@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DataBackupSection } from "@/components/settings/DataBackupSection";
 import { useSettings } from "@/hooks/useSettings";
 import { useApplications } from "@/hooks/useApplications";
 import type { UserSettings } from "@/types/application";
@@ -158,12 +159,14 @@ function SettingsPage() {
 
         <Card className="rounded-xl shadow-none">
           <CardHeader>
-            <CardTitle className="text-base">Données</CardTitle>
+            <CardTitle className="text-base">Sauvegarde et données</CardTitle>
             <CardDescription>
-              Les candidatures sont enregistrées localement dans votre navigateur.
+              Les candidatures sont enregistrées localement dans votre navigateur. Exportez-les pour
+              les conserver ou les réimporter ailleurs.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            <DataBackupSection />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline">Réinitialiser les données de démonstration</Button>
