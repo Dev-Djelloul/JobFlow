@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Merge, ShieldCheck } from "lucide-react";
+import { Merge, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -117,16 +117,12 @@ function DataQualityPage() {
   const plan = mergeTarget ? planMerge(mergeTarget, mergeName, applications, contacts) : null;
 
   return (
-    <AppLayout>
+    <AppLayout
+      title="Qualité des données"
+      description="Anomalies détectées à partir de vos données existantes. Rien n'est corrigé automatiquement : chaque action reste à votre main."
+    >
       <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Qualité des données</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Anomalies détectées à partir de vos données existantes. Rien n'est corrigé
-              automatiquement : chaque action reste à votre main.
-            </p>
-          </div>
+        <div className="flex flex-wrap items-end justify-end gap-3">
           <Select value={severity} onValueChange={(v) => setSeverity(v as IssueSeverity | "all")}>
             <SelectTrigger className="w-52" aria-label="Filtrer par gravité">
               <SelectValue />
@@ -190,7 +186,6 @@ function DataQualityPage() {
               <CardContent>
                 {issues.length === 0 ? (
                   <EmptyState
-                    icon={CheckCircle2}
                     title="Aucune anomalie"
                     description="Vos données sont complètes et cohérentes pour ce filtre."
                   />

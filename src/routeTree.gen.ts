@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as CandidaturesRouteImport } from './routes/candidatures'
+import { Route as DataQualityRouteImport } from './routes/data-quality'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as KanbanRouteImport } from './routes/kanban'
@@ -40,6 +41,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
 const CandidaturesRoute = CandidaturesRouteImport.update({
   id: '/candidatures',
   path: '/candidatures',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataQualityRoute = DataQualityRouteImport.update({
+  id: '/data-quality',
+  path: '/data-quality',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailsRoute = EmailsRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/actions': typeof ActionsRoute
   '/analytics': typeof AnalyticsRoute
   '/candidatures': typeof CandidaturesRoute
+  '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/actions': typeof ActionsRoute
   '/analytics': typeof AnalyticsRoute
   '/candidatures': typeof CandidaturesRoute
+  '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/actions': typeof ActionsRoute
   '/analytics': typeof AnalyticsRoute
   '/candidatures': typeof CandidaturesRoute
+  '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/actions'
     | '/analytics'
     | '/candidatures'
+    | '/data-quality'
     | '/emails'
     | '/intelligence'
     | '/kanban'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/actions'
     | '/analytics'
     | '/candidatures'
+    | '/data-quality'
     | '/emails'
     | '/intelligence'
     | '/kanban'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/actions'
     | '/analytics'
     | '/candidatures'
+    | '/data-quality'
     | '/emails'
     | '/intelligence'
     | '/kanban'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   ActionsRoute: typeof ActionsRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CandidaturesRoute: typeof CandidaturesRoute
+  DataQualityRoute: typeof DataQualityRoute
   EmailsRoute: typeof EmailsRoute
   IntelligenceRoute: typeof IntelligenceRoute
   KanbanRoute: typeof KanbanRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/candidatures'
       fullPath: '/candidatures'
       preLoaderRoute: typeof CandidaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-quality': {
+      id: '/data-quality'
+      path: '/data-quality'
+      fullPath: '/data-quality'
+      preLoaderRoute: typeof DataQualityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/emails': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActionsRoute: ActionsRoute,
   AnalyticsRoute: AnalyticsRoute,
   CandidaturesRoute: CandidaturesRoute,
+  DataQualityRoute: DataQualityRoute,
   EmailsRoute: EmailsRoute,
   IntelligenceRoute: IntelligenceRoute,
   KanbanRoute: KanbanRoute,
