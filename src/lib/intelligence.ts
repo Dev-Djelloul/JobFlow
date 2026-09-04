@@ -360,7 +360,7 @@ export function buildApplicationInsights(
         reason: "Aucune relance ouverte ni prochaine action n'est définie pour cette candidature.",
         suggestedAction: "Planifier une relance",
         cta: { kind: "follow_up", label: "Planifier une relance" },
-        daysSinceActivity: inactivity ?? undefined,
+        ...(inactivity !== null ? { daysSinceActivity: inactivity } : {}),
         contactAvailable: hasContact,
       });
     }
