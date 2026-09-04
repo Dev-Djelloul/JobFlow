@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Building2, Check, ExternalLink, Mail, Pencil, User } from "lucide-react";
+import { Building2, Check, ExternalLink, Mail, Pencil, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { companyKey } from "@/lib/companies";
@@ -18,9 +18,17 @@ interface Props {
   onEmail: (action: ActionItem) => void;
   onMarkDone: (action: ActionItem) => void;
   onEdit: (action: ActionItem) => void;
+  onDelete: (action: ActionItem) => void;
 }
 
-export function ActionCard({ action, onOpenApplication, onEmail, onMarkDone, onEdit }: Props) {
+export function ActionCard({
+  action,
+  onOpenApplication,
+  onEmail,
+  onMarkDone,
+  onEdit,
+  onDelete,
+}: Props) {
   const { application, followUp, contact } = action;
 
   return (
@@ -105,16 +113,21 @@ export function ActionCard({ action, onOpenApplication, onEmail, onMarkDone, onE
         <Button size="sm" variant="ghost" onClick={() => onEmail(action)}>
           <Mail className="size-4" /> Préparer un email
         </Button>
-        {followUp ? (
-          <>
-            <Button size="sm" variant="ghost" onClick={() => onMarkDone(action)}>
-              <Check className="size-4" /> Marquer effectuée
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => onEdit(action)}>
-              <Pencil className="size-4" /> Modifier
-            </Button>
-          </>
-        ) : null}
+        <Button size="sm" variant="ghost" onClick={() => onMarkDone(action)}>
+          <Check className="size-4" />
+          {followUp ? "Marquer effectuée" : "Marquer faite"}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onEdit(action)}>
+          <Pencil className="size-4" /> Modifier
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          onClick={() => onDelete(action)}
+        >
+          <Trash2 className="size-4" /> Supprimer
+        </Button>
       </div>
     </li>
   );

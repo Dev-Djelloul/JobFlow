@@ -5,6 +5,16 @@ import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ActionCard } from "@/components/actions/ActionCard";
@@ -73,25 +83,42 @@ function SummaryCard({
 }
 
 function ActionsPage() {
-  const { applications, loading, updateFollowUp } = useApplications();
+  const { applications, loading, updateFollowUp, deleteFollowUp, updateApplication } =
+    useApplications();
   const { contacts } = useContacts();
   const dialogs = useApplicationDialogs();
-  const [emailFor, setEmailFor] = useState<ActionItem | null>(null);
-  const [editing, setEditing] = useState<ActionItem | null>(null);
+  const [emailForId, setEmailForId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const actions = useMemo(() => buildActions(applications, contacts), [applications, contacts]);
   const groups = useMemo(() => groupActions(actions), [actions]);
   const summary = summarizeActions(actions);
 
+  /** Toujours relire l'action depuis les données dérivées : aucun état local obsolète. */
+  const find = (id: string | null) => (id ? (actions.find((a) => a.id === id) ?? null) : null);
+  const emailFor = find(emailForId);
+  const editing = find(editingId);
+  const deleting = find(deletingId);
+
+  /** Vide l'ancien mécanisme d'action porté par la candidature. */
+  const clearNextAction = (applicationId: string) =>
+    updateApplication(applicationId, { next_action: "", follow_up_date: "" });
+
   const handlers = {
     onOpenApplication: (a: ActionItem) => dialogs.openDetail(a.application),
-    onEmail: (a: ActionItem) => setEmailFor(a),
+    onEmail: (a: ActionItem) => setEmailForId(a.id),
     onMarkDone: (a: ActionItem) => {
-      if (!a.followUp) return;
-      updateFollowUp(a.application.id, a.followUp.id, { status: "done" });
-      toast.success("Relance marquée comme effectuée");
+      if (a.sourceType === "follow_up" && a.followUpId) {
+        updateFollowUp(a.applicationId, a.followUpId, { status: "done" });
+        toast.success("Relance marquée comme effectuée");
+      } else {
+        clearNextAction(a.applicationId);
+        toast.success("Action marquée comme faite");
+      }
     },
-    onEdit: (a: ActionItem) => setEditing(a),
+    onEdit: (a: ActionItem) => setEditingId(a.id),
+    onDelete: (a: ActionItem) => setDeletingId(a.id),
   };
 
   return (
@@ -196,7 +223,7 @@ function ActionsPage() {
 
       <EmailComposer
         open={!!emailFor}
-        onOpenChange={(o) => !o && setEmailFor(null)}
+        onOpenChange={(o) => !o && setEmailForId(null)}
         applicationId={emailFor?.application.id ?? null}
         contactId={emailFor?.contact?.id ?? null}
         templateId={suggestTemplateId({
@@ -207,16 +234,70 @@ function ActionsPage() {
 
       <FollowUpForm
         open={!!editing}
-        onOpenChange={(o) => !o && setEditing(null)}
-        followUp={editing?.followUp ?? null}
+        onOpenChange={(o) => !o && setEditingId(null)}
+        followUp={
+          editing
+            ? (editing.followUp ?? {
+                // Vue dérivée d'une next_action : jamais persistée telle quelle.
+                id: editing.id,
+                title: editing.title,
+                date: editing.date,
+                description: "",
+                status: "todo" as const,
+                created_at: "",
+                updated_at: "",
+              })
+            : null
+        }
         onSubmit={(values) => {
-          if (editing?.followUp) {
-            updateFollowUp(editing.application.id, editing.followUp.id, values);
+          if (editing?.sourceType === "follow_up" && editing.followUpId) {
+            updateFollowUp(editing.applicationId, editing.followUpId, values);
             toast.success("Relance mise à jour");
+          } else if (editing) {
+            if (values.status === "todo") {
+              updateApplication(editing.applicationId, {
+                next_action: values.title,
+                follow_up_date: values.date,
+              });
+              toast.success("Prochaine action mise à jour");
+            } else {
+              clearNextAction(editing.applicationId);
+              toast.success("Action clôturée");
+            }
           }
-          setEditing(null);
+          setEditingId(null);
         }}
       />
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette action ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting?.sourceType === "follow_up"
+                ? `La relance « ${deleting?.title} » sera définitivement supprimée.`
+                : `La prochaine action « ${deleting?.title} » sera retirée de la candidature.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleting?.sourceType === "follow_up" && deleting.followUpId) {
+                  deleteFollowUp(deleting.applicationId, deleting.followUpId);
+                } else if (deleting) {
+                  clearNextAction(deleting.applicationId);
+                }
+                setDeletingId(null);
+                toast.success("Action supprimée");
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <ApplicationForm
         open={dialogs.formOpen}

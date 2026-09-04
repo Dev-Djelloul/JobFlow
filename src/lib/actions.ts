@@ -29,9 +29,23 @@ export const ACTION_BUCKET_BADGE: Record<ActionBucket, string> = {
   later: "bg-muted text-muted-foreground border-border",
 };
 
+/**
+ * Modèle DERIVE (jamais persisté) décrivant une action et surtout sa donnée source.
+ *
+ * Sources possibles :
+ * - `follow_up`  → `Application.follow_ups[]` (donnée structurée, prioritaire) ;
+ * - `next_action`→ `Application.next_action` + `Application.follow_up_date`
+ *                  (ancien mécanisme, conservé pour compatibilité).
+ *
+ * `sourceType`, `applicationId` et `followUpId` permettent aux boutons
+ * Modifier / Marquer effectuée / Supprimer de cibler la vraie donnée.
+ */
 export interface ActionItem {
   id: string;
   source: ActionSource;
+  sourceType: "application" | "follow_up";
+  applicationId: string;
+  followUpId?: string;
   title: string;
   description: string;
   /** Date ISO courte (yyyy-mm-dd) ou "" si non planifiée. */
@@ -87,6 +101,9 @@ export function buildActions(
       items.push({
         id: `fu-${followUp.id}`,
         source: "follow_up",
+        sourceType: "follow_up",
+        applicationId: application.id,
+        followUpId: followUp.id,
         title: followUp.title || "Relance",
         description: followUp.description ?? "",
         date: followUp.date ?? "",
@@ -99,16 +116,19 @@ export function buildActions(
 
     // Action portée par la candidature elle-même (next_action + follow_up_date).
     if (application.next_action && application.status !== "rejected") {
-      const duplicate = openFollowUps.some(
-        (f) =>
-          normalize(f.title) === normalize(application.next_action) &&
-          (!application.follow_up_date || f.date === application.follow_up_date),
+      // Anti-doublon : la relance (donnée structurée) prime toujours sur next_action,
+      // quel que soit son statut (à faire, effectuée ou annulée) dès que le titre
+      // correspond, ou que la paire titre + date correspond.
+      const duplicate = (application.follow_ups ?? []).some(
+        (f) => normalize(f.title) === normalize(application.next_action),
       );
       if (!duplicate) {
         const date = application.follow_up_date ?? "";
         items.push({
           id: `na-${application.id}`,
           source: "next_action",
+          sourceType: "application",
+          applicationId: application.id,
           title: application.next_action,
           description: "",
           date,
