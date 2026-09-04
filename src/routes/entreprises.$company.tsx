@@ -17,6 +17,7 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
+import { CompanyContactsSection } from "@/components/contacts/CompanyContactsSection";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { buildCompanies, conversionRates, isOverdue } from "@/lib/companies";
@@ -128,6 +129,8 @@ function CompanyDetailPage() {
             ) : null}
           </CardContent>
         </Card>
+
+        <CompanyContactsSection companyKey={company.key} companyName={company.name} />
 
         <Card className="overflow-hidden rounded-xl p-0 shadow-none">
           <CardHeader className="p-4 pb-0">

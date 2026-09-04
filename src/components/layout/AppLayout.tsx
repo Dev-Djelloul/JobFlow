@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   KanbanSquare,
   Settings,
+  Users,
   Menu,
   Moon,
   Sun,
@@ -19,6 +20,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
+  { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
