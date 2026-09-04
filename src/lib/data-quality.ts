@@ -268,8 +268,11 @@ export function buildQualityReport(
   // Score : pénalité pondérée rapportée au nombre d'enregistrements contrôlés.
   const checked = applications.length + contacts.length;
   const penalty = counts.critical * 6 + counts.major * 3 + counts.minor * 1;
+  // Barème : un enregistrement « pire cas » pèse 10 points de pénalité.
   const score =
-    checked === 0 ? 100 : Math.max(0, Math.min(100, Math.round(100 - (penalty / (checked * 6)) * 100)));
+    checked === 0
+      ? 100
+      : Math.max(0, Math.min(100, Math.round(100 - (penalty / (checked * 10)) * 100)));
 
   return { issues, duplicates, score, counts, checked };
 }
