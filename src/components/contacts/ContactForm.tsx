@@ -100,6 +100,7 @@ export function ContactForm({
         </DialogHeader>
 
         <form
+          noValidate
           className="space-y-4"
           onSubmit={handleSubmit((values) => onSubmit(schema.parse(values) as ContactInput))}
         >
