@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FollowUpForm } from "./FollowUpForm";
+import { EmailComposer } from "@/components/email/EmailComposer";
+import { suggestTemplateId } from "@/lib/email";
 import { useApplications } from "@/hooks/useApplications";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -42,6 +44,7 @@ export function FollowUpSection({ application }: { application: Application }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<FollowUp | null>(null);
   const [pendingDelete, setPendingDelete] = useState<FollowUp | null>(null);
+  const [emailFor, setEmailFor] = useState<FollowUp | null>(null);
 
   const followUps = [...(application.follow_ups ?? [])].sort((a, b) =>
     (a.date || "9999").localeCompare(b.date || "9999"),
@@ -109,6 +112,9 @@ export function FollowUpSection({ application }: { application: Application }) {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button size="sm" variant="ghost" onClick={() => setEmailFor(f)}>
+                  <Mail className="size-4" /> Préparer un email
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -132,6 +138,14 @@ export function FollowUpSection({ application }: { application: Application }) {
           ))}
         </ul>
       )}
+
+      <EmailComposer
+        open={!!emailFor}
+        onOpenChange={(o) => !o && setEmailFor(null)}
+        applicationId={application.id}
+        contactId={application.contact_ids?.[0] ?? null}
+        templateId={suggestTemplateId({ application, followUpTitle: emailFor?.title })}
+      />
 
       <FollowUpForm
         open={formOpen}
