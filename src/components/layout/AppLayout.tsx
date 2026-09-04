@@ -8,6 +8,7 @@ import {
   KanbanSquare,
   ListTodo,
   Settings,
+  Sparkles,
   Users,
   Mail,
   Menu,
