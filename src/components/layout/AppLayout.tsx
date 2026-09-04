@@ -1,6 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Briefcase, LayoutDashboard, KanbanSquare, Settings, Menu, Moon, Sun } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  LayoutDashboard,
+  KanbanSquare,
+  Settings,
+  Menu,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";

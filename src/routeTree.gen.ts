@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CandidaturesRouteImport } from './routes/candidatures'
 import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as ParametresRouteImport } from './routes/parametres'
+import { Route as EntreprisesIndexRouteImport } from './routes/entreprises.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const ParametresRoute = ParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntreprisesIndexRoute = EntreprisesIndexRouteImport.update({
+  id: '/entreprises/',
+  path: '/entreprises/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises/': typeof EntreprisesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises': typeof EntreprisesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/candidatures': typeof CandidaturesRoute
   '/kanban': typeof KanbanRoute
   '/parametres': typeof ParametresRoute
+  '/entreprises/': typeof EntreprisesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/candidatures' | '/kanban' | '/parametres'
+  fullPaths: '/' | '/candidatures' | '/kanban' | '/parametres' | '/entreprises/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/candidatures' | '/kanban' | '/parametres'
-  id: '__root__' | '/' | '/candidatures' | '/kanban' | '/parametres'
+  to: '/' | '/candidatures' | '/kanban' | '/parametres' | '/entreprises'
+  id:
+    | '__root__'
+    | '/'
+    | '/candidatures'
+    | '/kanban'
+    | '/parametres'
+    | '/entreprises/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   CandidaturesRoute: typeof CandidaturesRoute
   KanbanRoute: typeof KanbanRoute
   ParametresRoute: typeof ParametresRoute
+  EntreprisesIndexRoute: typeof EntreprisesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParametresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/entreprises/': {
+      id: '/entreprises/'
+      path: '/entreprises'
+      fullPath: '/entreprises/'
+      preLoaderRoute: typeof EntreprisesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   CandidaturesRoute: CandidaturesRoute,
   KanbanRoute: KanbanRoute,
   ParametresRoute: ParametresRoute,
+  EntreprisesIndexRoute: EntreprisesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
