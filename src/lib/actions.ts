@@ -1,0 +1,154 @@
+import type { Application, FollowUp } from "@/types/application";
+import type { Contact } from "@/types/contact";
+import { companyKey } from "./companies";
+import { addDaysKey, todayKey } from "./format";
+
+export type ActionSource = "follow_up" | "next_action";
+
+export const ACTION_BUCKETS = ["overdue", "today", "week", "later"] as const;
+export type ActionBucket = (typeof ACTION_BUCKETS)[number];
+
+export const ACTION_BUCKET_LABELS: Record<ActionBucket, string> = {
+  overdue: "En retard",
+  today: "Aujourd'hui",
+  week: "Cette semaine",
+  later: "Plus tard",
+};
+
+export const ACTION_BUCKET_DOTS: Record<ActionBucket, string> = {
+  overdue: "bg-destructive",
+  today: "bg-warning",
+  week: "bg-info",
+  later: "bg-muted-foreground/40",
+};
+
+export const ACTION_BUCKET_BADGE: Record<ActionBucket, string> = {
+  overdue: "bg-destructive/10 text-destructive border-destructive/25",
+  today: "bg-warning/12 text-warning border-warning/30",
+  week: "bg-info/10 text-info border-info/25",
+  later: "bg-muted text-muted-foreground border-border",
+};
+
+export interface ActionItem {
+  id: string;
+  source: ActionSource;
+  title: string;
+  description: string;
+  /** Date ISO courte (yyyy-mm-dd) ou "" si non planifiée. */
+  date: string;
+  bucket: ActionBucket;
+  application: Application;
+  followUp: FollowUp | null;
+  contact: Contact | null;
+}
+
+/** Classe une date (yyyy-mm-dd) dans l'une des quatre catégories. */
+export function bucketForDate(date: string, today = todayKey()): ActionBucket {
+  if (!date) return "later";
+  if (date < today) return "overdue";
+  if (date === today) return "today";
+  if (date <= addDaysKey(today, 7)) return "week";
+  return "later";
+}
+
+const normalize = (v: string) =>
+  (v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+function firstContact(contacts: Contact[], application: Application): Contact | null {
+  const linked = (application.contact_ids ?? [])
+    .map((id) => contacts.find((c) => c.id === id))
+    .find(Boolean);
+  if (linked) return linked;
+  const key = companyKey(application.company);
+  return contacts.find((c) => companyKey(c.company) === key) ?? null;
+}
+
+/**
+ * Construit la liste des actions actives à partir des données existantes.
+ * Aucune persistance : tout est dérivé des candidatures / relances / contacts.
+ */
+export function buildActions(
+  applications: Application[],
+  contacts: Contact[] = [],
+  today = todayKey(),
+): ActionItem[] {
+  const items: ActionItem[] = [];
+
+  for (const application of applications) {
+    const contact = firstContact(contacts, application);
+    const openFollowUps = (application.follow_ups ?? []).filter((f) => f.status === "todo");
+
+    for (const followUp of openFollowUps) {
+      items.push({
+        id: `fu-${followUp.id}`,
+        source: "follow_up",
+        title: followUp.title || "Relance",
+        description: followUp.description ?? "",
+        date: followUp.date ?? "",
+        bucket: bucketForDate(followUp.date ?? "", today),
+        application,
+        followUp,
+        contact,
+      });
+    }
+
+    // Action portée par la candidature elle-même (next_action + follow_up_date).
+    if (application.next_action && application.status !== "rejected") {
+      const duplicate = openFollowUps.some(
+        (f) =>
+          normalize(f.title) === normalize(application.next_action) &&
+          (!application.follow_up_date || f.date === application.follow_up_date),
+      );
+      if (!duplicate) {
+        const date = application.follow_up_date ?? "";
+        items.push({
+          id: `na-${application.id}`,
+          source: "next_action",
+          title: application.next_action,
+          description: "",
+          date,
+          bucket: bucketForDate(date, today),
+          application,
+          followUp: null,
+          contact,
+        });
+      }
+    }
+  }
+
+  return items.sort(
+    (a, b) => (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31") ||
+      a.application.company.localeCompare(b.application.company, "fr"),
+  );
+}
+
+export function groupActions(actions: ActionItem[]): Record<ActionBucket, ActionItem[]> {
+  return {
+    overdue: actions.filter((a) => a.bucket === "overdue"),
+    today: actions.filter((a) => a.bucket === "today"),
+    week: actions.filter((a) => a.bucket === "week"),
+    later: actions.filter((a) => a.bucket === "later"),
+  };
+}
+
+export interface ActionSummary {
+  overdue: number;
+  today: number;
+  week: number;
+  total: number;
+}
+
+export function summarizeActions(actions: ActionItem[]): ActionSummary {
+  const groups = groupActions(actions);
+  return {
+    overdue: groups.overdue.length,
+    today: groups.today.length,
+    week: groups.week.length,
+    total: actions.length,
+  };
+}

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, CalendarClock, Percent, Send, Trophy, Users } from "lucide-react";
+import { Briefcase, CheckCircle2, Percent, Send, Trophy, Users } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -16,14 +16,16 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { useApplications } from "@/hooks/useApplications";
+import { useContacts } from "@/hooks/useContacts";
+import { buildTimeline, computeStats, latestApplications } from "@/lib/stats";
 import {
-  buildTimeline,
-  computeStats,
-  latestApplications,
-  upcomingActions,
-  upcomingFollowUps,
-} from "@/lib/stats";
-import { formatDate } from "@/lib/format";
+  ACTION_BUCKET_DOTS,
+  ACTION_BUCKET_LABELS,
+  buildActions,
+  summarizeActions,
+} from "@/lib/actions";
+import { cn } from "@/lib/utils";
+import { formatDate, relativeDateLabel } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -73,8 +75,10 @@ function DashboardPage() {
   const stats = computeStats(applications);
   const timeline = buildTimeline(applications);
   const latest = latestApplications(applications);
-  const actions = upcomingActions(applications);
-  const followUps = upcomingFollowUps(applications);
+  const { contacts } = useContacts();
+  const allActions = buildActions(applications, contacts);
+  const actionSummary = summarizeActions(allActions);
+  const nextActions = allActions.slice(0, 5);
 
   return (
     <AppLayout
@@ -181,38 +185,46 @@ function DashboardPage() {
             </Card>
 
             <Card className="rounded-xl shadow-none">
-              <CardHeader>
-                <CardTitle className="text-base">Prochaines actions</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                <CardTitle className="text-base">À faire</CardTitle>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/actions">Voir toutes les actions</Link>
+                </Button>
               </CardHeader>
               <CardContent className="space-y-3">
-                {followUps.map(({ followUp, application }) => (
-                  <div
-                    key={followUp.id}
-                    className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
-                  >
-                    <CalendarClock className="mt-0.5 size-4 shrink-0 text-info" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{followUp.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {application.company} · relance {formatDate(followUp.date)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {actions.length === 0 && followUps.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune action planifiée.</p>
+                {nextActions.length === 0 ? (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="size-4 text-success" />
+                    Toutes vos actions sont à jour.
+                  </p>
                 ) : (
-                  actions.map((app) => (
-                    <div key={app.id} className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
-                      <CalendarClock className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{app.next_action}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {app.company} · relance {formatDate(app.follow_up_date) || "non planifiée"}
-                        </p>
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      {actionSummary.overdue} en retard · {actionSummary.today} aujourd'hui ·{" "}
+                      {actionSummary.total} au total
+                    </p>
+                    {nextActions.map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "mt-1.5 size-2 shrink-0 rounded-full",
+                            ACTION_BUCKET_DOTS[action.bucket],
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{action.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {action.application.company} · {relativeDateLabel(action.date)} ·{" "}
+                            {ACTION_BUCKET_LABELS[action.bucket]}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </>
                 )}
               </CardContent>
             </Card>
