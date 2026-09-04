@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/profile/UserAvatar";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/hooks/useSettings";
@@ -47,7 +46,6 @@ function NavLinks({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <TooltipProvider delayDuration={150}>
       <nav className="flex flex-col gap-1">
         {NAV.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -57,6 +55,7 @@ function NavLinks({
               to={to}
               onClick={onNavigate}
               aria-label={collapsed ? label : undefined}
+              title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
                 collapsed ? "justify-center px-2" : "px-3",
@@ -69,16 +68,9 @@ function NavLinks({
               {collapsed ? null : label}
             </Link>
           );
-          if (!collapsed) return link;
-          return (
-            <Tooltip key={to}>
-              <TooltipTrigger asChild>{link}</TooltipTrigger>
-              <TooltipContent side="right">{label}</TooltipContent>
-            </Tooltip>
-          );
+          return link;
         })}
       </nav>
-    </TooltipProvider>
   );
 }
 
