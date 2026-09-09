@@ -79,8 +79,8 @@ function NavLinks({
 function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <div className={cn("flex items-center gap-2.5 px-1", collapsed && "justify-center px-0")}>
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Briefcase className="size-4" />
+      <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary">
+        <img src="/icons/icon-192.png" alt="" className="size-full object-cover" />
       </div>
       <div className={cn("leading-tight", collapsed && "hidden")}>
         <p className="font-display text-sm font-bold">JobFlow</p>
