@@ -65,6 +65,26 @@ export const REMOTE_LABELS: Record<RemoteMode, string> = {
 export const remoteLabel = (mode?: string): string =>
   mode && mode in REMOTE_LABELS ? REMOTE_LABELS[mode as RemoteMode] : "";
 
+export const EXPERIENCE_LEVELS = ["debutant", "junior", "confirme", "senior", "expert"] as const;
+
+export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
+
+export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
+  debutant: "Débutant — sans expérience",
+  junior: "Junior (0 à 2 ans)",
+  confirme: "Confirmé (3 à 5 ans)",
+  senior: "Senior (5 à 10 ans)",
+  expert: "Expert (10 ans et +)",
+};
+
+// Le champ reste une chaîne libre pour rester compatible avec les anciennes candidatures
+// (texte saisi à la main avant l'introduction de cette liste) : on affiche le libellé
+// explicite quand la valeur correspond à un niveau connu, sinon le texte brut tel quel.
+export const experienceLabel = (level?: string): string =>
+  level && level in EXPERIENCE_LEVEL_LABELS
+    ? EXPERIENCE_LEVEL_LABELS[level as ExperienceLevel]
+    : (level ?? "");
+
 export interface StatusHistoryEntry {
   status: ApplicationStatus;
   date: string;

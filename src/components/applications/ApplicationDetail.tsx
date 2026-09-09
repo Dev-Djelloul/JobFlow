@@ -39,13 +39,44 @@ import { AddressLink } from "@/components/common/AddressLink";
 import { downloadApplicationDetailPdf } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
 import {
+  experienceLabel,
   remoteLabel,
   sourceLabel,
   STATUSES,
   STATUS_LABELS,
   type Application,
   type ApplicationStatus,
+  type ExperienceLevel,
 } from "@/types/application";
+
+// Vert pour les niveaux accessibles sans expérience (utile en un coup d'œil pour un premier
+// emploi), ambre pour ceux qui en demandent davantage.
+const EXPERIENCE_BADGE_CLASSES: Record<ExperienceLevel, string> = {
+  debutant: "bg-success/12 text-success border-success/30",
+  junior: "bg-success/12 text-success border-success/30",
+  confirme: "bg-info/10 text-info border-info/25",
+  senior: "bg-warning/15 text-warning-foreground border-warning/35 dark:text-warning",
+  expert: "bg-warning/15 text-warning-foreground border-warning/35 dark:text-warning",
+};
+
+function ExperienceBadge({ level }: { level?: string | undefined }) {
+  if (!level) return null;
+  const label = experienceLabel(level);
+  const classes =
+    level in EXPERIENCE_BADGE_CLASSES
+      ? EXPERIENCE_BADGE_CLASSES[level as ExperienceLevel]
+      : "bg-muted text-muted-foreground border-border";
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium",
+        classes,
+      )}
+    >
+      {label}
+    </span>
+  );
+}
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -119,6 +150,7 @@ export function ApplicationDetail({
 
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={application.status} />
+            <ExperienceBadge level={application.experience_level} />
             <Select
               value={application.status}
               onValueChange={(v) => onStatusChange(application.id, v as ApplicationStatus)}
@@ -187,7 +219,10 @@ export function ApplicationDetail({
               }
             />
             <Field label="Télétravail" value={remoteLabel(application.remote)} />
-            <Field label="Niveau d'expérience" value={application.experience_level} />
+            <Field
+              label="Niveau d'expérience"
+              value={<ExperienceBadge level={application.experience_level} />}
+            />
             <Field label="Prochaine action" value={application.next_action} />
           </div>
 

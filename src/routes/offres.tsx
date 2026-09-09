@@ -120,6 +120,24 @@ function looksRemote(offer: FranceTravailOffer): boolean {
   );
 }
 
+// Style aligné sur la mise en évidence de l'expérience côté candidature (ApplicationDetail) :
+// vert pour "débutant accepté", ambre quand une expérience est demandée.
+function experienceBadgeClasses(exige: string): string {
+  if (exige === "D") return "bg-success/12 text-success border-success/30";
+  if (exige === "E" || exige === "S")
+    return "bg-warning/15 text-warning-foreground border-warning/35 dark:text-warning";
+  return "bg-muted text-muted-foreground border-border";
+}
+
+// Correspondance approximative entre le code d'exigence France Travail et nos niveaux
+// structurés — sert uniquement de valeur de départ, modifiable dans le formulaire.
+function mapExperienceLevel(exige: string): string {
+  if (exige === "D") return "debutant";
+  if (exige === "S") return "junior";
+  if (exige === "E") return "confirme";
+  return "";
+}
+
 function matchesContractFilter(offer: FranceTravailOffer, filter: ContractFilter): boolean {
   if (!filter) return true;
   if (filter === "STAGE" || filter === "ALTERNANCE") {
@@ -136,6 +154,7 @@ function OffresPage() {
   const [typeContrat, setTypeContrat] = useState<ContractFilter>("");
   const [pageSize, setPageSize] = useState<number>(20);
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [beginnerOnly, setBeginnerOnly] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
   const [loading, setLoading] = useState(false);
@@ -228,6 +247,7 @@ function OffresPage() {
   const visibleOffers = offers
     .filter((o) => matchesContractFilter(o, typeContrat))
     .filter((o) => (remoteOnly ? looksRemote(o) : true))
+    .filter((o) => (beginnerOnly ? o.experienceExige === "D" : true))
     .filter((o) => (favoritesOnly ? favoriteIds.has(o.id) : true));
 
   // Regroupe les offres par région/département (préfixe du champ "lieu", ex. "75 - Paris") pour
@@ -261,6 +281,7 @@ function OffresPage() {
       status: "to_target",
       notes: offer.description,
       favorite: favoriteIds.has(offer.id),
+      experience_level: mapExperienceLevel(offer.experienceExige),
     });
     setFormOpen(true);
   };
@@ -340,6 +361,15 @@ function OffresPage() {
               className="size-4 rounded border-input"
             />
             Télétravail uniquement (détecté depuis l'annonce)
+          </label>
+          <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={beginnerOnly}
+              onChange={(e) => setBeginnerOnly(e.target.checked)}
+              className="size-4 rounded border-input"
+            />
+            Ouvert aux débutants uniquement
           </label>
           <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
             <input
@@ -424,6 +454,16 @@ function OffresPage() {
                             ) : null}
                           </div>
                         </div>
+                        {offer.experienceLibelle ? (
+                          <span
+                            className={cn(
+                              "inline-flex w-fit items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium",
+                              experienceBadgeClasses(offer.experienceExige),
+                            )}
+                          >
+                            {offer.experienceLibelle}
+                          </span>
+                        ) : null}
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                           {offer.entreprise ? (
                             <span className="flex items-center gap-1">

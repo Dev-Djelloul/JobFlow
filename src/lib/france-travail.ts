@@ -17,6 +17,10 @@ export interface FranceTravailOffer {
   typeContratLibelle: string;
   salaire: string;
   url: string;
+  /** Libellé lisible du niveau d'expérience demandé (ex. "Débutant accepté", "Expérience exigée de 2 ans"). */
+  experienceLibelle: string;
+  /** Code d'exigence France Travail : D = débutant accepté, S = souhaitée, E = exigée. */
+  experienceExige: string;
 }
 
 interface RawFtOffer {
@@ -30,6 +34,8 @@ interface RawFtOffer {
   typeContratLibelle?: string;
   salaire?: { libelle?: string };
   origineOffre?: { urlOrigine?: string };
+  experienceLibelle?: string;
+  experienceExige?: string;
 }
 
 /** Erreur porteuse d'un message détaillé destiné à remonter tel quel jusqu'au client. */
@@ -80,6 +86,8 @@ function mapOffer(raw: RawFtOffer): FranceTravailOffer {
     typeContratLibelle: raw.typeContratLibelle ?? "",
     salaire: raw.salaire?.libelle ?? "",
     url: raw.origineOffre?.urlOrigine ?? "",
+    experienceLibelle: raw.experienceLibelle ?? "",
+    experienceExige: raw.experienceExige ?? "",
   };
 }
 

@@ -27,6 +27,8 @@ import {
 import {
   APPLICATION_SOURCES,
   CONTRACT_TYPES,
+  EXPERIENCE_LEVEL_LABELS,
+  EXPERIENCE_LEVELS,
   REMOTE_LABELS,
   REMOTE_MODES,
   SOURCE_LABELS,
@@ -279,11 +281,27 @@ export function ApplicationForm({
 
           <div className="grid gap-1.5">
             <Label htmlFor="experience_level">Niveau d'expérience</Label>
-            <Input
-              id="experience_level"
-              {...register("experience_level")}
-              placeholder="Junior, Confirmé, Senior…"
-            />
+            <Select
+              value={watch("experience_level") || "none"}
+              onValueChange={(v) =>
+                setValue(
+                  "experience_level",
+                  (v === "none" ? "" : v) as FormValues["experience_level"],
+                )
+              }
+            >
+              <SelectTrigger id="experience_level">
+                <SelectValue placeholder="Non renseigné" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Non renseigné</SelectItem>
+                {EXPERIENCE_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {EXPERIENCE_LEVEL_LABELS[level]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-1.5">
