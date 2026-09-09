@@ -15,7 +15,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -248,7 +247,7 @@ export function ApplicationDetail({
             </Select>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
               <FileText className="size-4" /> {exportingPdf ? "Génération…" : "Exporter en PDF"}
             </Button>
@@ -257,6 +256,16 @@ export function ApplicationDetail({
             </Button>
             <Button size="sm" onClick={() => onEdit(application)}>
               <Pencil className="size-4" /> Modifier
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setConfirmOpen(true)}
+              aria-label="Supprimer cette candidature"
+              title="Supprimer cette candidature"
+            >
+              <Trash2 className="size-4" />
             </Button>
           </div>
 
@@ -368,18 +377,6 @@ export function ApplicationDetail({
               ))}
             </ol>
           </div>
-
-          <DialogFooter className="sm:justify-start">
-            <Button
-              size="icon"
-              variant="destructive"
-              onClick={() => setConfirmOpen(true)}
-              aria-label="Supprimer cette candidature"
-              title="Supprimer cette candidature"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
