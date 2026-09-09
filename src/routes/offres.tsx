@@ -246,7 +246,10 @@ function OffresPage() {
 
   const handleAdd = (offer: FranceTravailOffer) => {
     setPrefill({
-      company: offer.entreprise,
+      // Certaines offres France Travail masquent le nom de l'entreprise ("recruteur anonyme") :
+      // le champ étant obligatoire dans le formulaire, une valeur vide bloquait silencieusement
+      // l'ajout de la candidature (aucun message visible, le dialogue restait simplement ouvert).
+      company: offer.entreprise || "Entreprise non communiquée",
       position: offer.intitule,
       location: offer.lieu,
       contract_type: mapContractType(offer),

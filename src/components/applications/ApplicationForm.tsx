@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
 import { Star } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -151,18 +152,29 @@ export function ApplicationForm({
 
         <form
           className="grid gap-4 sm:grid-cols-2"
-          onSubmit={handleSubmit((values) => {
-            const parsed = schema.parse(values);
-            const { source, source_url, remote, experience_level, ...rest } = parsed;
-            onSubmit({
-              ...rest,
-              // Champs optionnels : on n'enregistre que ce qui est réellement renseigné.
-              ...(source ? { source } : {}),
-              ...(source_url ? { source_url } : {}),
-              ...(remote ? { remote } : {}),
-              ...(experience_level ? { experience_level } : {}),
-            } as ApplicationInput);
-          })}
+          onSubmit={handleSubmit(
+            (values) => {
+              const parsed = schema.parse(values);
+              const { source, source_url, remote, experience_level, ...rest } = parsed;
+              onSubmit({
+                ...rest,
+                // Champs optionnels : on n'enregistre que ce qui est réellement renseigné.
+                ...(source ? { source } : {}),
+                ...(source_url ? { source_url } : {}),
+                ...(remote ? { remote } : {}),
+                ...(experience_level ? { experience_level } : {}),
+              } as ApplicationInput);
+            },
+            // Filet de sécurité : sans ce callback, une validation en échec bloque la
+            // soumission sans aucun signal visible si le message d'erreur du champ concerné
+            // n'est pas affiché à l'écran (déjà arrivé avec les Notes, puis l'Entreprise).
+            (formErrors) => {
+              const firstMessage = Object.values(formErrors)[0]?.message;
+              toast.error(
+                firstMessage || "Certains champs sont invalides, vérifiez le formulaire.",
+              );
+            },
+          )}
         >
           <div className="grid gap-1.5">
             <Label htmlFor="company">Entreprise *</Label>
