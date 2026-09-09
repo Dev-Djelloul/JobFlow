@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ExternalLink, Mail, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, FileText, Mail, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,6 +36,7 @@ import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import { AddressLink } from "@/components/common/AddressLink";
+import { downloadApplicationDetailPdf } from "@/lib/pdf";
 import {
   remoteLabel,
   sourceLabel,
@@ -72,7 +74,19 @@ export function ApplicationDetail({
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   if (!application) return null;
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      await downloadApplicationDetailPdf(application);
+    } catch {
+      toast.error("Échec de l'export PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   return (
     <>
@@ -203,12 +217,17 @@ export function ApplicationDetail({
             <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
               <Trash2 className="size-4" /> Supprimer
             </Button>
-            <Button variant="outline" onClick={() => setEmailOpen(true)}>
-              <Mail className="size-4" /> Écrire un email
-            </Button>
-            <Button onClick={() => onEdit(application)}>
-              <Pencil className="size-4" /> Modifier
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
+                <FileText className="size-4" /> {exportingPdf ? "Génération…" : "Exporter en PDF"}
+              </Button>
+              <Button variant="outline" onClick={() => setEmailOpen(true)}>
+                <Mail className="size-4" /> Écrire un email
+              </Button>
+              <Button onClick={() => onEdit(application)}>
+                <Pencil className="size-4" /> Modifier
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

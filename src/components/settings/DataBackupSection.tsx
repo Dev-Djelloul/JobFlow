@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, FileSpreadsheet, Trash2, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import {
   parseBackup,
   type BackupSummary,
 } from "@/lib/backup";
+import { downloadApplicationsListPdf } from "@/lib/pdf";
 import { STATUS_LABELS, type Application } from "@/types/application";
 import type { Contact } from "@/types/contact";
 import type { EmailTemplate } from "@/types/email";
@@ -72,6 +73,23 @@ export function DataBackupSection() {
       toast.success("Export CSV téléchargé");
     } catch {
       toast.error("Échec de l'export CSV");
+    }
+  };
+
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      await downloadApplicationsListPdf(applications);
+      const now = new Date().toISOString();
+      saveLastExportAt(now);
+      setLastExport(now);
+      toast.success("Export PDF téléchargé");
+    } catch (e) {
+      console.error(e);
+      toast.error("Échec de l'export PDF");
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -151,6 +169,9 @@ export function DataBackupSection() {
         </Button>
         <Button variant="outline" onClick={handleExportCsv}>
           <FileSpreadsheet /> Exporter en CSV
+        </Button>
+        <Button variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
+          <FileText /> {exportingPdf ? "Génération…" : "Exporter en PDF"}
         </Button>
         <Button variant="outline" onClick={() => fileRef.current?.click()}>
           <Upload /> Importer une sauvegarde
