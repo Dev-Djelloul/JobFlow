@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -247,7 +248,12 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
 
           <div className="grid gap-1.5">
             <Label htmlFor="application_date">Date de candidature *</Label>
-            <Input id="application_date" type="date" {...register("application_date")} />
+            <DatePicker
+              id="application_date"
+              value={watch("application_date")}
+              onChange={(v) => setValue("application_date", v, { shouldValidate: true })}
+              aria-invalid={!!errors.application_date}
+            />
             {errors.application_date && (
               <p className="text-xs text-destructive">{errors.application_date.message}</p>
             )}
@@ -279,7 +285,11 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
 
           <div className="grid gap-1.5">
             <Label htmlFor="follow_up_date">Date de relance</Label>
-            <Input id="follow_up_date" type="date" {...register("follow_up_date")} />
+            <DatePicker
+              id="follow_up_date"
+              value={watch("follow_up_date") ?? ""}
+              onChange={(v) => setValue("follow_up_date", v, { shouldValidate: true })}
+            />
           </div>
 
           <div className="grid gap-1.5 sm:col-span-2">

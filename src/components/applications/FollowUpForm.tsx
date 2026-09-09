@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -94,7 +95,12 @@ export function FollowUpForm({ open, onOpenChange, followUp, onSubmit }: Props) 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="fu_date">Date de relance *</Label>
-              <Input id="fu_date" type="date" {...register("date")} />
+              <DatePicker
+                id="fu_date"
+                value={watch("date")}
+                onChange={(v) => setValue("date", v, { shouldValidate: true })}
+                aria-invalid={!!errors.date}
+              />
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
 
