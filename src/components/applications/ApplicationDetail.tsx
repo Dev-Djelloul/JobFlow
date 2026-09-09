@@ -205,7 +205,7 @@ export function ApplicationDetail({
             </div>
           ) : null}
           <DialogHeader
-            className={navigationList && navigationList.length > 1 ? "mt-5" : undefined}
+            className={navigationList && navigationList.length > 1 ? "mt-9" : undefined}
           >
             <DialogTitle className="flex items-center gap-2 pr-10">
               {application.position}
