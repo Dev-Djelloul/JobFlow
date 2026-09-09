@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UserAvatar } from "@/components/profile/UserAvatar";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -196,6 +197,7 @@ export function AppLayout({
               ) : null}
             </div>
             <div className="flex items-center gap-2">
+              <GlobalSearch />
               <Button
                 variant="ghost"
                 size="icon"
