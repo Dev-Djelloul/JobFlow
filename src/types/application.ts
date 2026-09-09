@@ -13,7 +13,7 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   to_target: "À cibler",
   applied: "Candidature envoyée",
   interview: "Entretien",
-  test: "Test",
+  test: "Test / Cas pratique",
   offer: "Offre",
   rejected: "Refusée",
 };
