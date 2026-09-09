@@ -52,12 +52,15 @@ const SOURCE_OPTIONS: { value: OfferSource; label: string }[] = [
 // de façon fiable non plus. On normalise donc tout vers nos propres ContractType, en
 // complétant par le libellé texte de l'offre quand le code seul ne suffit pas.
 function mapContractType(offer: JobOffer): ContractType {
-  const libelle = offer.typeContratLibelle.toLowerCase();
-  if (libelle.includes("stage")) return "Stage";
+  // Le libellé de contrat d'Adzuna est reconstruit à partir de codes génériques
+  // ("CDI"/"CDD") sans jamais mentionner stage/alternance, même quand l'offre en est une
+  // (l'info n'apparaît alors que dans le titre) : on regarde donc aussi l'intitulé complet.
+  const haystack = `${offer.typeContratLibelle} ${offer.intitule}`.toLowerCase();
+  if (haystack.includes("stage")) return "Stage";
   if (
-    libelle.includes("alternance") ||
-    libelle.includes("apprentissage") ||
-    libelle.includes("professionnalisation")
+    haystack.includes("alternance") ||
+    haystack.includes("apprentissage") ||
+    haystack.includes("professionnalisation")
   )
     return "Alternance";
   const byCode: Record<string, ContractType> = {
@@ -308,9 +311,17 @@ function OffresPage() {
       source_url: offer.url,
       application_date: new Date().toISOString().slice(0, 10),
       status: "to_target",
-      notes: offer.description,
+      // L'API Adzuna ne renvoie qu'une description tronquée dans ses résultats de recherche
+      // (contrairement à France Travail) — aucun paramètre ne permet d'obtenir le texte
+      // complet, qui n'existe que sur la page de l'offre. On le signale explicitement pour
+      // éviter de faire croire à une perte de données côté JobFlow.
+      notes:
+        offer.source === "adzuna"
+          ? `${offer.description}\n\n[Description tronquée par Adzuna — voir le texte complet sur l'offre originale : ${offer.url}]`
+          : offer.description,
       favorite: favoriteIds.has(offer.id),
       experience_level: mapExperienceLevel(offer.experienceExige),
+      ...(looksRemote(offer) ? { remote: "remote" as const } : {}),
     });
     setFormOpen(true);
   };
