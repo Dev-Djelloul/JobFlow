@@ -248,6 +248,18 @@ export function ApplicationDetail({
             </Select>
           </div>
 
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
+              <FileText className="size-4" /> {exportingPdf ? "Génération…" : "Exporter en PDF"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
+              <Mail className="size-4" /> Écrire un email
+            </Button>
+            <Button size="sm" onClick={() => onEdit(application)}>
+              <Pencil className="size-4" /> Modifier
+            </Button>
+          </div>
+
           <Separator />
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -357,21 +369,16 @@ export function ApplicationDetail({
             </ol>
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
-              <Trash2 className="size-4" /> Supprimer
+          <DialogFooter className="sm:justify-start">
+            <Button
+              size="icon"
+              variant="destructive"
+              onClick={() => setConfirmOpen(true)}
+              aria-label="Supprimer cette candidature"
+              title="Supprimer cette candidature"
+            >
+              <Trash2 className="size-4" />
             </Button>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
-                <FileText className="size-4" /> {exportingPdf ? "Génération…" : "Exporter en PDF"}
-              </Button>
-              <Button variant="outline" onClick={() => setEmailOpen(true)}>
-                <Mail className="size-4" /> Écrire un email
-              </Button>
-              <Button onClick={() => onEdit(application)}>
-                <Pencil className="size-4" /> Modifier
-              </Button>
-            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
