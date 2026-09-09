@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
 import { searchFranceTravailOffers, type FranceTravailOffer } from "@/lib/france-travail";
+import { departmentName } from "@/lib/french-departments";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationInput, ContractType } from "@/types/application";
@@ -408,7 +409,10 @@ function OffresPage() {
               <div className="flex items-center gap-3">
                 <h2 className="flex shrink-0 items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5">
                   <MapPin className="size-4 text-primary" />
-                  <span className="text-sm font-bold text-primary">{group.zone}</span>
+                  <span className="text-sm font-bold text-primary">
+                    {group.zone}
+                    {departmentName(group.zone) ? ` — ${departmentName(group.zone)}` : ""}
+                  </span>
                   <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
                     {group.items.length}
                   </span>
