@@ -287,6 +287,8 @@ function CompanyDetailPage() {
         onStatusChange={dialogs.setStatus}
         onToggleFavorite={dialogs.toggleFavorite}
         onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
+        navigationList={company.applications}
+        onNavigate={dialogs.openDetail}
       />
     </AppLayout>
   );

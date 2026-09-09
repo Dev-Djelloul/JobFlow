@@ -194,6 +194,12 @@ function KanbanPage() {
         onStatusChange={dialogs.setStatus}
         onToggleFavorite={dialogs.toggleFavorite}
         onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
+        navigationList={
+          dialogs.selected
+            ? applications.filter((a) => a.status === dialogs.selected!.status)
+            : undefined
+        }
+        onNavigate={dialogs.openDetail}
       />
     </AppLayout>
   );

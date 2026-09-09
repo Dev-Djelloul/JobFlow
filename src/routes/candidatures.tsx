@@ -286,6 +286,8 @@ function ApplicationsPage() {
         onStatusChange={dialogs.setStatus}
         onToggleFavorite={dialogs.toggleFavorite}
         onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
+        navigationList={filtered}
+        onNavigate={dialogs.openDetail}
       />
     </AppLayout>
   );

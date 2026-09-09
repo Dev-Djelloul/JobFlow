@@ -330,6 +330,8 @@ function ContactDetailPage() {
         onStatusChange={dialogs.setStatus}
         onToggleFavorite={dialogs.toggleFavorite}
         onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
+        navigationList={relatedApps}
+        onNavigate={dialogs.openDetail}
       />
     </AppLayout>
   );

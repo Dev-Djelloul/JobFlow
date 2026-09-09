@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { ExternalLink, FileText, Mail, Pencil, Star, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  Mail,
+  Pencil,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +105,11 @@ interface Props {
   onStatusChange: (id: string, status: ApplicationStatus) => void;
   onToggleFavorite: (id: string) => void;
   onRemoveStatusHistoryEntry: (id: string, index: number) => void;
+  /** Liste ordonnée dans laquelle naviguer (ex. la liste filtrée affichée sur la page) —
+   * les flèches précédent/suivant n'apparaissent que si elle est fournie et contient
+   * la candidature ouverte. */
+  navigationList?: Application[] | undefined;
+  onNavigate?: ((application: Application) => void) | undefined;
 }
 
 export function ApplicationDetail({
@@ -107,10 +121,45 @@ export function ApplicationDetail({
   onStatusChange,
   onToggleFavorite,
   onRemoveStatusHistoryEntry,
+  navigationList,
+  onNavigate,
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+
+  const navIndex = application
+    ? (navigationList?.findIndex((a) => a.id === application.id) ?? -1)
+    : -1;
+  const hasPrev = navIndex > 0;
+  const hasNext = navIndex >= 0 && !!navigationList && navIndex < navigationList.length - 1;
+  const goPrev = () => {
+    if (hasPrev && navigationList) onNavigate?.(navigationList[navIndex - 1]!);
+  };
+  const goNext = () => {
+    if (hasNext && navigationList) onNavigate?.(navigationList[navIndex + 1]!);
+  };
+
+  // Flèches gauche/droite du clavier : seulement quand le focus n'est pas dans un champ de
+  // saisie (input, select, textarea…), pour ne jamais interférer avec la frappe ou un menu.
+  useEffect(() => {
+    if (!open || !navigationList) return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      const isFormField =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        (e.target as HTMLElement | null)?.closest('[role="combobox"], [contenteditable="true"]');
+      if (isFormField) return;
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, navigationList, navIndex]);
+
   if (!application) return null;
 
   const handleExportPdf = async () => {
@@ -128,7 +177,36 @@ export function ApplicationDetail({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+          {navigationList && navigationList.length > 1 ? (
+            <div className="absolute left-4 top-4 flex items-center gap-0.5 rounded-full border border-border bg-background/80 p-0.5 backdrop-blur">
+              <button
+                type="button"
+                onClick={goPrev}
+                disabled={!hasPrev}
+                aria-label="Candidature précédente"
+                title="Candidature précédente (←)"
+                className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              >
+                <ChevronLeft className="size-3.5" />
+              </button>
+              <span className="px-1 text-[11px] tabular-nums text-muted-foreground">
+                {navIndex + 1}/{navigationList.length}
+              </span>
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!hasNext}
+                aria-label="Candidature suivante"
+                title="Candidature suivante (→)"
+                className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          ) : null}
+          <DialogHeader
+            className={navigationList && navigationList.length > 1 ? "mt-5" : undefined}
+          >
             <DialogTitle className="flex items-center gap-2 pr-6">
               {application.position}
               <button
