@@ -47,7 +47,7 @@ const schema = z.object({
   experience_level: z.string().trim().max(120).default(""),
   application_date: z.string().min(1, "La date est obligatoire"),
   status: z.enum(STATUSES),
-  notes: z.string().max(6000, "6000 caractères maximum").default(""),
+  notes: z.string().default(""),
   next_action: z.string().trim().max(160).default(""),
   follow_up_date: z.string().default(""),
 });
