@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WifiOff, Wifi, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 const OFFLINE_AUTO_HIDE_MS = 8000;
 const RECONNECTED_AUTO_HIDE_MS = 4000;
+
+type Banner = "offline" | "reconnected" | null;
 
 /**
  * Bandeau discret informant du changement d'état réseau. Jobee Flow ne
@@ -15,30 +17,26 @@ const RECONNECTED_AUTO_HIDE_MS = 4000;
  */
 export function OfflineIndicator() {
   const isOnline = useOnlineStatus();
-  const [showReconnected, setShowReconnected] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
-  const [dismissedOffline, setDismissedOffline] = useState(false);
-  const [dismissedReconnected, setDismissedReconnected] = useState(false);
+  const [banner, setBanner] = useState<Banner>(null);
+  const wasOnline = useRef(isOnline);
 
+  // Décide quel bandeau afficher, uniquement sur un vrai changement d'état réseau.
   useEffect(() => {
-    if (!isOnline) {
-      setWasOffline(true);
-      setShowReconnected(false);
-      setDismissedOffline(false);
-      const timer = setTimeout(() => setDismissedOffline(true), OFFLINE_AUTO_HIDE_MS);
-      return () => clearTimeout(timer);
-    }
-    if (wasOffline) {
-      setShowReconnected(true);
-      setDismissedReconnected(false);
-      setWasOffline(false);
-      const timer = setTimeout(() => setShowReconnected(false), RECONNECTED_AUTO_HIDE_MS);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isOnline, wasOffline]);
+    if (wasOnline.current === isOnline) return;
+    wasOnline.current = isOnline;
+    setBanner(isOnline ? "reconnected" : "offline");
+  }, [isOnline]);
 
-  if (!isOnline && !dismissedOffline) {
+  // Minuterie de disparition automatique, indépendante du reste : ne se
+  // réarme que lorsque le bandeau affiché change réellement.
+  useEffect(() => {
+    if (!banner) return;
+    const delay = banner === "offline" ? OFFLINE_AUTO_HIDE_MS : RECONNECTED_AUTO_HIDE_MS;
+    const timer = setTimeout(() => setBanner(null), delay);
+    return () => clearTimeout(timer);
+  }, [banner]);
+
+  if (banner === "offline") {
     return (
       <div
         role="status"
@@ -52,7 +50,7 @@ export function OfflineIndicator() {
           size="icon"
           className="size-6 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
           aria-label="Fermer"
-          onClick={() => setDismissedOffline(true)}
+          onClick={() => setBanner(null)}
         >
           <X className="size-3.5" />
         </Button>
@@ -60,7 +58,7 @@ export function OfflineIndicator() {
     );
   }
 
-  if (showReconnected && !dismissedReconnected) {
+  if (banner === "reconnected") {
     return (
       <div
         role="status"
@@ -74,7 +72,7 @@ export function OfflineIndicator() {
           size="icon"
           className="size-6 shrink-0 rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
           aria-label="Fermer"
-          onClick={() => setDismissedReconnected(true)}
+          onClick={() => setBanner(null)}
         >
           <X className="size-3.5" />
         </Button>
