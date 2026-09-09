@@ -91,11 +91,12 @@ ne dépend d'aucun service externe (hormis Google Fonts, chargées en ligne).
 | `npm run preview` | Prévisualise le build (nécessite un environnement compatible Cloudflare Workers, voir remarque ci-dessous) |
 | `npm run lint` | Vérifie le code avec ESLint (inclut les règles Prettier) |
 | `npm run format` | Reformate le code avec Prettier |
+| `npm run deploy` | Build + déploiement sur Cloudflare Workers (voir [Déploiement](#déploiement)) |
 
 > **Remarque build/preview** : le projet cible Cloudflare Workers via Nitro. `vite preview`
 > seul ne suffit pas à exécuter le worker généré (`.output/server/`) — pour un test fidèle
 > du build de production, utilisez `wrangler dev` depuis `.output/server/` après
-> `npm run build` (nécessite `wrangler`, installable via `npx wrangler`).
+> `npm run build`.
 
 ## Structure du projet
 
@@ -184,11 +185,19 @@ Voir `tests/e2e/README.md` pour les prérequis (serveur de développement sur le
 
 ## Déploiement
 
-Le build de production cible Cloudflare Workers via Nitro :
+Le build de production cible Cloudflare Workers via Nitro. `wrangler.json` à la racine
+définit le nom du worker et sa route (`jobflow.digitalblueskye.com`), fusionnés
+automatiquement avec la config générée par Nitro au build.
 
 ```sh
+npx wrangler login   # une seule fois, autorise l'accès à ton compte Cloudflare
+npm run deploy       # build + déploiement en une commande
+```
+
+`npm run deploy` équivaut à :
+```sh
 npm run build
-npx nitro deploy --prebuilt
+wrangler deploy --config .output/server/wrangler.json
 ```
 
 Le worker généré (`.output/server/`) sert les assets statiques (`.output/public/`,
