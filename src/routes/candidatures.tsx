@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
+import { AddressLink } from "@/components/common/AddressLink";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
@@ -209,10 +210,12 @@ function ApplicationsPage() {
                         <TableCell>
                           <span className="block max-w-[220px] truncate">{app.position}</span>
                           <span className="text-xs text-muted-foreground md:hidden">
-                            {app.location}
+                            <AddressLink address={app.location} />
                           </span>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">{app.location || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <AddressLink address={app.location} />
+                        </TableCell>
                         <TableCell className="hidden xl:table-cell">
                           {sourceLabel(app.source) || "—"}
                         </TableCell>

@@ -34,6 +34,7 @@ import { EmailComposer } from "@/components/email/EmailComposer";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
+import { AddressLink } from "@/components/common/AddressLink";
 import {
   remoteLabel,
   sourceLabel,
@@ -81,7 +82,8 @@ export function ApplicationDetail({
             <DialogTitle>{application.position}</DialogTitle>
             <DialogDescription>
               {application.company}
-              {application.location ? ` · ${application.location}` : ""} · {application.contract_type}
+              {application.location ? ` · ${application.location}` : ""} ·{" "}
+              {application.contract_type}
             </DialogDescription>
           </DialogHeader>
 
@@ -108,7 +110,14 @@ export function ApplicationDetail({
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <Field label="Entreprise" value={application.company} />
-            <Field label="Localisation" value={application.location} />
+            <Field
+              label="Localisation"
+              value={
+                application.location ? (
+                  <AddressLink address={application.location} showIcon />
+                ) : null
+              }
+            />
             <Field label="Contrat" value={application.contract_type} />
             <Field label="Salaire" value={application.salary} />
             <Field label="Candidature" value={formatDate(application.application_date)} />
@@ -174,7 +183,6 @@ export function ApplicationDetail({
           <ApplicationTimeline application={application} />
 
           <Separator />
-
 
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">

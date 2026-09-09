@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
+import { AddressLink } from "@/components/common/AddressLink";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
@@ -141,26 +142,34 @@ function CompanyDetailPage() {
             {/* Mobile : cartes */}
             <div className="grid gap-3 md:hidden">
               {company.applications.map((app) => (
-                <button
+                <div
                   key={app.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => dialogs.openDetail(app)}
-                  className="rounded-lg border p-3 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      dialogs.openDetail(app);
+                    }
+                  }}
+                  className="cursor-pointer rounded-lg border p-3 text-left"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium">{app.position}</p>
                     <StatusBadge status={app.status} />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {[app.location, app.contract_type, sourceLabel(app.source)]
-                      .filter(Boolean)
-                      .join(" · ")}
+                    {app.location ? <AddressLink address={app.location} /> : null}
+                    {[app.contract_type, sourceLabel(app.source)].filter(Boolean).length > 0
+                      ? `${app.location ? " · " : ""}${[app.contract_type, sourceLabel(app.source)].filter(Boolean).join(" · ")}`
+                      : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(app.application_date) || "—"}
                     {app.next_action ? ` · ${app.next_action}` : ""}
                   </p>
-                </button>
+                </div>
               ))}
             </div>
 
@@ -186,7 +195,9 @@ function CompanyDetailPage() {
                       onClick={() => dialogs.openDetail(app)}
                     >
                       <TableCell className="font-medium">{app.position}</TableCell>
-                      <TableCell>{app.location || "—"}</TableCell>
+                      <TableCell>
+                        <AddressLink address={app.location} />
+                      </TableCell>
                       <TableCell>{app.contract_type}</TableCell>
                       <TableCell>{sourceLabel(app.source) || "—"}</TableCell>
                       <TableCell className="whitespace-nowrap">
