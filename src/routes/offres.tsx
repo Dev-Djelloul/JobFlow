@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, ExternalLink, MapPin, Plus, Search } from "lucide-react";
+import { Building2, CheckCircle2, ExternalLink, MapPin, Plus, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -48,49 +48,120 @@ const CONTRACT_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "SAI", label: "Saisonnier" },
 ];
 
+const SAVED_SEARCH_KEY = "jobflow.offres.savedSearch.v1";
+
+interface SavedSearch {
+  motsCles: string;
+  departement: string;
+  typeContrat: string;
+}
+
+function loadSavedSearch(): SavedSearch | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SAVED_SEARCH_KEY);
+    return raw ? (JSON.parse(raw) as SavedSearch) : null;
+  } catch {
+    return null;
+  }
+}
+
+// L'API France Travail v2 n'a pas de paramètre dédié au télétravail : on filtre côté client
+// sur la présence du mot "télétravail" dans l'intitulé/la description des offres déjà chargées.
+function looksRemote(offer: FranceTravailOffer): boolean {
+  const haystack = `${offer.intitule} ${offer.description}`.toLowerCase();
+  return (
+    haystack.includes("télétravail") ||
+    haystack.includes("teletravail") ||
+    haystack.includes("remote")
+  );
+}
+
 function OffresPage() {
-  const { createApplication } = useApplications();
+  const { applications, createApplication } = useApplications();
   const [query, setQuery] = useState("");
   const [departement, setDepartement] = useState("");
   const [typeContrat, setTypeContrat] = useState("");
+  const [remoteOnly, setRemoteOnly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState(false);
   const [offers, setOffers] = useState<FranceTravailOffer[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<Partial<ApplicationInput> | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    const saved = loadSavedSearch();
+    if (saved) {
+      setQuery(saved.motsCles);
+      setDepartement(saved.departement);
+      setTypeContrat(saved.typeContrat);
+    }
+  }, []);
+
+  // URLs déjà présentes dans le suivi de candidatures — pour repérer les offres déjà ajoutées.
+  const existingUrls = useMemo(
+    () => new Set(applications.map((a) => a.job_url).filter(Boolean)),
+    [applications],
+  );
+
+  const runSearch = async (targetPage: number) => {
     const motsCles = query.trim();
     if (!motsCles) return;
-    setLoading(true);
+    const isFirstPage = targetPage === 0;
+    if (isFirstPage) setLoading(true);
+    else setLoadingMore(true);
     setError(null);
     try {
       const result = await searchFranceTravailOffers({
         data: {
           motsCles,
+          page: targetPage,
           ...(departement.trim() ? { departement: departement.trim() } : {}),
           ...(typeContrat ? { typeContrat } : {}),
         },
       });
       if (!result.ok) {
         setError(result.error ?? "La recherche a échoué.");
-        setOffers([]);
+        if (isFirstPage) setOffers([]);
       } else {
-        setOffers(result.offers);
+        setOffers((prev) => (isFirstPage ? result.offers : [...prev, ...result.offers]));
+        setTotal(result.total ?? null);
+        setPage(targetPage);
         setSearched(true);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "La recherche a échoué (erreur inattendue).");
     } finally {
-      setLoading(false);
+      if (isFirstPage) setLoading(false);
+      else setLoadingMore(false);
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    void runSearch(0);
+  };
+
+  const handleSaveSearch = () => {
+    const motsCles = query.trim();
+    if (!motsCles) {
+      toast.error("Renseignez des mots-clés avant d'enregistrer la recherche.");
+      return;
+    }
+    const saved: SavedSearch = { motsCles, departement, typeContrat };
+    window.localStorage.setItem(SAVED_SEARCH_KEY, JSON.stringify(saved));
+    toast.success("Recherche enregistrée — elle sera proposée à chaque visite.");
+  };
+
+  const visibleOffers = remoteOnly ? offers.filter(looksRemote) : offers;
+
   // Regroupe les offres par région/département (préfixe du champ "lieu", ex. "75 - Paris") pour
   // rendre visible la répartition géographique — l'API ne renvoie pas de résultats triés par zone.
-  const groupedOffers = offers.reduce<{ zone: string; items: FranceTravailOffer[] }[]>(
+  const groupedOffers = visibleOffers.reduce<{ zone: string; items: FranceTravailOffer[] }[]>(
     (groups, offer) => {
       const zone = offer.lieu.split(" - ")[0]?.trim() || "Non précisé";
       const group = groups.find((g) => g.zone === zone);
@@ -118,6 +189,8 @@ function OffresPage() {
     });
     setFormOpen(true);
   };
+
+  const canLoadMore = total !== null && offers.length < total;
 
   return (
     <AppLayout
@@ -160,7 +233,25 @@ function OffresPage() {
           <Button type="submit" disabled={loading || !query.trim()}>
             {loading ? "Recherche…" : "Rechercher"}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSaveSearch}
+            title="Enregistrer cette recherche par défaut"
+          >
+            <Save className="size-4" />
+          </Button>
         </form>
+
+        <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={remoteOnly}
+            onChange={(e) => setRemoteOnly(e.target.checked)}
+            className="size-4 rounded border-input"
+          />
+          Télétravail uniquement (détecté depuis l'annonce)
+        </label>
 
         {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -175,7 +266,7 @@ function OffresPage() {
           />
         ) : null}
 
-        {searched && !loading && offers.length === 0 && !error ? (
+        {searched && !loading && visibleOffers.length === 0 && !error ? (
           <EmptyState
             title="Aucune offre trouvée"
             description="Essayez d'autres mots-clés ou élargissez votre recherche."
@@ -193,52 +284,75 @@ function OffresPage() {
                 </span>
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                {group.items.map((offer) => (
-                  <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
-                    <CardContent className="space-y-2 p-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium leading-snug">{offer.intitule}</p>
-                        {offer.url ? (
-                          <a
-                            href={offer.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="shrink-0 text-muted-foreground hover:text-primary"
-                            title="Voir l'offre originale"
-                          >
-                            <ExternalLink className="size-4" />
-                          </a>
+                {group.items.map((offer) => {
+                  const alreadyAdded = offer.url ? existingUrls.has(offer.url) : false;
+                  return (
+                    <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
+                      <CardContent className="space-y-2 p-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-medium leading-snug">{offer.intitule}</p>
+                          {offer.url ? (
+                            <a
+                              href={offer.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="shrink-0 text-muted-foreground hover:text-primary"
+                              title="Voir l'offre originale"
+                            >
+                              <ExternalLink className="size-4" />
+                            </a>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                          {offer.entreprise ? (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="size-3.5" /> {offer.entreprise}
+                            </span>
+                          ) : null}
+                          {offer.lieu ? (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="size-3.5" /> {offer.lieu}
+                            </span>
+                          ) : null}
+                          <span>{offer.typeContratLibelle || offer.typeContrat}</span>
+                          {offer.dateCreation ? (
+                            <span>{formatDate(offer.dateCreation)}</span>
+                          ) : null}
+                        </div>
+                        {offer.description ? (
+                          <p className="line-clamp-3 text-sm text-muted-foreground">
+                            {offer.description}
+                          </p>
                         ) : null}
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                        {offer.entreprise ? (
-                          <span className="flex items-center gap-1">
-                            <Building2 className="size-3.5" /> {offer.entreprise}
+                        {alreadyAdded ? (
+                          <span className="flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="size-3.5" /> Déjà ajoutée
                           </span>
-                        ) : null}
-                        {offer.lieu ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="size-3.5" /> {offer.lieu}
-                          </span>
-                        ) : null}
-                        <span>{offer.typeContratLibelle || offer.typeContrat}</span>
-                        {offer.dateCreation ? <span>{formatDate(offer.dateCreation)}</span> : null}
-                      </div>
-                      {offer.description ? (
-                        <p className="line-clamp-3 text-sm text-muted-foreground">
-                          {offer.description}
-                        </p>
-                      ) : null}
-                      <Button size="sm" variant="outline" onClick={() => handleAdd(offer)}>
-                        <Plus className="size-4" /> Ajouter comme candidature
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => handleAdd(offer)}>
+                            <Plus className="size-4" /> Ajouter comme candidature
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
+
+        {canLoadMore ? (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              onClick={() => void runSearch(page + 1)}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Chargement…" : `Voir plus d'offres (${offers.length}/${total})`}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <ApplicationForm

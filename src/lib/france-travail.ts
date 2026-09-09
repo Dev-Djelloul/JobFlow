@@ -91,9 +91,13 @@ function mapOffer(raw: RawFtOffer): FranceTravailOffer {
 export interface FranceTravailSearchResult {
   ok: boolean;
   offers: FranceTravailOffer[];
+  /** Nombre total de résultats côté France Travail, pour savoir s'il reste des pages à charger. */
+  total?: number;
   /** Détail de l'erreur, affiché tel quel côté client pour faciliter le diagnostic. */
   error?: string;
 }
+
+const PAGE_SIZE = 20;
 
 export const searchFranceTravailOffers = createServerFn({ method: "GET" })
   .validator(
@@ -101,6 +105,8 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
       motsCles: z.string().trim().min(1).max(200),
       departement: z.string().trim().max(3).optional(),
       typeContrat: z.string().trim().max(10).optional(),
+      /** Index de la page à charger (0-based) — permet le "Voir plus d'offres" côté client. */
+      page: z.number().int().min(0).max(50).default(0),
     }),
   )
   .handler(async ({ data }): Promise<FranceTravailSearchResult> => {
@@ -110,7 +116,8 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
       url.searchParams.set("motsCles", data.motsCles);
       if (data.departement) url.searchParams.set("departement", data.departement);
       if (data.typeContrat) url.searchParams.set("typeContrat", data.typeContrat);
-      url.searchParams.set("range", "0-19");
+      const start = data.page * PAGE_SIZE;
+      url.searchParams.set("range", `${start}-${start + PAGE_SIZE - 1}`);
       url.searchParams.set("sort", "1"); // tri par date de création décroissante
 
       const res = await fetch(url, {
@@ -125,8 +132,15 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
           error: `Recherche France Travail échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
         };
       }
+      // Content-Range: "offres 0-19/532" — le total après le "/" indique s'il reste des pages.
+      const contentRange = res.headers.get("Content-Range");
+      const total = contentRange ? Number(contentRange.split("/")[1]) : undefined;
       const json = (await res.json()) as { resultats?: RawFtOffer[] };
-      return { ok: true, offers: (json.resultats ?? []).map(mapOffer) };
+      return {
+        ok: true,
+        offers: (json.resultats ?? []).map(mapOffer),
+        ...(total !== undefined && !Number.isNaN(total) ? { total } : {}),
+      };
     } catch (e) {
       return {
         ok: false,
