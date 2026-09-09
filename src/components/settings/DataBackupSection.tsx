@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, FileSpreadsheet, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +47,7 @@ export function DataBackupSection() {
     contacts: Contact[];
     emailTemplates: EmailTemplate[];
   } | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const followUpCount = applications.reduce((n, a) => n + (a.follow_ups?.length ?? 0), 0);
 
@@ -94,6 +95,16 @@ export function DataBackupSection() {
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const handleDeleteAll = () => {
+    const count = applications.length;
+    writeSafetyBackup();
+    replaceAllApplications([]);
+    setConfirmDeleteAll(false);
+    toast.success(
+      `${count} candidature(s) supprimée(s) — une sauvegarde de sécurité a été créée avant suppression.`,
+    );
   };
 
   const confirmImport = () => {
@@ -157,6 +168,24 @@ export function DataBackupSection() {
 
       <CsvImportSection />
 
+      <Separator />
+
+      <div className="space-y-2 rounded-lg border border-destructive/30 p-4">
+        <p className="text-sm font-medium text-destructive">Zone dangereuse</p>
+        <p className="text-sm text-muted-foreground">
+          Supprime définitivement toutes vos candidatures (et leurs relances associées). Vos
+          contacts et modèles d'email ne sont pas concernés. Une sauvegarde de sécurité est créée
+          automatiquement avant la suppression.
+        </p>
+        <Button
+          variant="destructive"
+          onClick={() => setConfirmDeleteAll(true)}
+          disabled={applications.length === 0}
+        >
+          <Trash2 /> Supprimer toutes les candidatures
+        </Button>
+      </div>
+
       <AlertDialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -182,6 +211,28 @@ export function DataBackupSection() {
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={confirmImport}>Importer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDeleteAll} onOpenChange={setConfirmDeleteAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer toutes les candidatures ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {applications.length} candidature(s) et leurs relances seront supprimées
+              définitivement. Vos contacts et modèles d'email sont conservés. Une sauvegarde de
+              sécurité de vos données actuelles sera créée automatiquement avant la suppression.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer tout
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
