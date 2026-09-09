@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, FileText, Mail, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, FileText, Mail, Pencil, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,7 @@ import { ApplicationContactsSection } from "@/components/contacts/ApplicationCon
 import { formatDate } from "@/lib/format";
 import { AddressLink } from "@/components/common/AddressLink";
 import { downloadApplicationDetailPdf } from "@/lib/pdf";
+import { cn } from "@/lib/utils";
 import {
   remoteLabel,
   sourceLabel,
@@ -62,6 +63,7 @@ interface Props {
   onEdit: (application: Application) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: ApplicationStatus) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
 export function ApplicationDetail({
@@ -71,6 +73,7 @@ export function ApplicationDetail({
   onEdit,
   onDelete,
   onStatusChange,
+  onToggleFavorite,
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -93,7 +96,20 @@ export function ApplicationDetail({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{application.position}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 pr-6">
+              {application.position}
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(application.id)}
+                aria-label={application.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                title={application.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                className="text-muted-foreground hover:text-amber-500"
+              >
+                <Star
+                  className={cn("size-4", application.favorite && "fill-amber-400 text-amber-400")}
+                />
+              </button>
+            </DialogTitle>
             <DialogDescription>
               {application.company}
               {application.location ? ` · ${application.location}` : ""} ·{" "}

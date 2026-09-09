@@ -266,6 +266,7 @@ function IntelligencePage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
 
       <ApplicationForm

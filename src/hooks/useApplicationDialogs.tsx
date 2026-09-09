@@ -5,8 +5,14 @@ import type { Application, ApplicationInput, ApplicationStatus } from "@/types/a
 
 /** Shared create / edit / detail / delete wiring used by the pages. */
 export function useApplicationDialogs() {
-  const { createApplication, updateApplication, deleteApplication, changeStatus, applications } =
-    useApplications();
+  const {
+    createApplication,
+    updateApplication,
+    deleteApplication,
+    changeStatus,
+    toggleFavorite,
+    applications,
+  } = useApplications();
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editing, setEditing] = useState<Application | null>(null);
@@ -80,5 +86,6 @@ export function useApplicationDialogs() {
     submit,
     remove,
     setStatus,
+    toggleFavorite,
   };
 }

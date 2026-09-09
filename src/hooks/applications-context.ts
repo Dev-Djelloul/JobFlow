@@ -13,8 +13,13 @@ export interface ApplicationsContextValue {
   updateApplication: (id: string, input: Partial<ApplicationInput>) => void;
   deleteApplication: (id: string) => void;
   changeStatus: (id: string, status: ApplicationStatus) => void;
+  toggleFavorite: (id: string) => void;
   addFollowUp: (applicationId: string, input: FollowUpInput) => void;
-  updateFollowUp: (applicationId: string, followUpId: string, input: Partial<FollowUpInput>) => void;
+  updateFollowUp: (
+    applicationId: string,
+    followUpId: string,
+    input: Partial<FollowUpInput>,
+  ) => void;
   deleteFollowUp: (applicationId: string, followUpId: string) => void;
   getApplication: (id: string) => Application | undefined;
   setApplicationContacts: (id: string, contactIds: string[]) => void;

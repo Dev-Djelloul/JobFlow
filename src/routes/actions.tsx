@@ -298,7 +298,6 @@ function ActionsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-
       <ApplicationForm
         open={dialogs.formOpen}
         onOpenChange={dialogs.setFormOpen}
@@ -312,6 +311,7 @@ function ActionsPage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
     </AppLayout>
   );

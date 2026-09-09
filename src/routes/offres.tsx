@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, CheckCircle2, ExternalLink, MapPin, Plus, Save, Search } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  ExternalLink,
+  MapPin,
+  Plus,
+  Save,
+  Search,
+  Star,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +20,7 @@ import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
 import { searchFranceTravailOffers, type FranceTravailOffer } from "@/lib/france-travail";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { ApplicationInput, ContractType } from "@/types/application";
 
 export const Route = createFileRoute("/offres")({
@@ -26,34 +36,57 @@ export const Route = createFileRoute("/offres")({
   component: OffresPage,
 });
 
-const CONTRACT_TYPE_MAP: Record<string, ContractType> = {
-  CDI: "CDI",
-  CDD: "CDD",
-  MIS: "Intérim",
-  TTI: "Intérim",
-  LIB: "Freelance",
-  SAI: "CDD",
-};
-
-function mapContractType(code: string): ContractType {
-  return CONTRACT_TYPE_MAP[code] ?? "CDI";
+// L'API renvoie un code (typeContrat) mais les stages/alternances n'y sont pas toujours
+// distingués de façon fiable : on complète donc par une lecture du libellé texte de l'offre.
+function mapContractType(offer: FranceTravailOffer): ContractType {
+  const libelle = offer.typeContratLibelle.toLowerCase();
+  if (libelle.includes("stage")) return "Stage";
+  if (
+    libelle.includes("alternance") ||
+    libelle.includes("apprentissage") ||
+    libelle.includes("professionnalisation")
+  )
+    return "Alternance";
+  const byCode: Record<string, ContractType> = {
+    CDI: "CDI",
+    CDD: "CDD",
+    MIS: "Intérim",
+    TTI: "Intérim",
+    LIB: "Freelance",
+    SAI: "CDD",
+  };
+  return byCode[offer.typeContrat] ?? "CDI";
 }
 
-const CONTRACT_TYPE_OPTIONS: { value: string; label: string }[] = [
+// Filtre client-side : ces deux catégories ne correspondent pas à un code fiable et unique
+// côté API "typeContrat", on les applique donc après réception des résultats.
+type ContractFilter = "" | "CDI" | "CDD" | "MIS" | "LIB" | "SAI" | "STAGE" | "ALTERNANCE";
+
+const CONTRACT_TYPE_OPTIONS: { value: ContractFilter; label: string }[] = [
   { value: "", label: "Tous les contrats" },
   { value: "CDI", label: "CDI" },
   { value: "CDD", label: "CDD" },
   { value: "MIS", label: "Intérim" },
   { value: "LIB", label: "Freelance / libéral" },
   { value: "SAI", label: "Saisonnier" },
+  { value: "STAGE", label: "Stage" },
+  { value: "ALTERNANCE", label: "Alternance" },
 ];
 
+// Codes reconnus tels quels par le paramètre "typeContrat" de l'API ; Stage/Alternance sont
+// filtrés côté client (voir mapContractType) car non fiablement identifiables par un code seul.
+const API_CONTRACT_CODES = new Set(["CDI", "CDD", "MIS", "LIB", "SAI"]);
+
+const PAGE_SIZE_OPTIONS = [20, 50, 100, 150] as const;
+
 const SAVED_SEARCH_KEY = "jobflow.offres.savedSearch.v1";
+const FAVORITE_OFFERS_KEY = "jobflow.offres.favorites.v1";
 
 interface SavedSearch {
   motsCles: string;
   departement: string;
-  typeContrat: string;
+  typeContrat: ContractFilter;
+  pageSize: number;
 }
 
 function loadSavedSearch(): SavedSearch | null {
@@ -63,6 +96,16 @@ function loadSavedSearch(): SavedSearch | null {
     return raw ? (JSON.parse(raw) as SavedSearch) : null;
   } catch {
     return null;
+  }
+}
+
+function loadFavoriteOfferIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(FAVORITE_OFFERS_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
   }
 }
 
@@ -77,12 +120,24 @@ function looksRemote(offer: FranceTravailOffer): boolean {
   );
 }
 
+function matchesContractFilter(offer: FranceTravailOffer, filter: ContractFilter): boolean {
+  if (!filter) return true;
+  if (filter === "STAGE" || filter === "ALTERNANCE") {
+    const mapped = mapContractType(offer);
+    return filter === "STAGE" ? mapped === "Stage" : mapped === "Alternance";
+  }
+  return offer.typeContrat === filter;
+}
+
 function OffresPage() {
   const { applications, createApplication } = useApplications();
   const [query, setQuery] = useState("");
   const [departement, setDepartement] = useState("");
-  const [typeContrat, setTypeContrat] = useState("");
+  const [typeContrat, setTypeContrat] = useState<ContractFilter>("");
+  const [pageSize, setPageSize] = useState<number>(20);
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -99,8 +154,20 @@ function OffresPage() {
       setQuery(saved.motsCles);
       setDepartement(saved.departement);
       setTypeContrat(saved.typeContrat);
+      if (saved.pageSize) setPageSize(saved.pageSize);
     }
+    setFavoriteIds(loadFavoriteOfferIds());
   }, []);
+
+  const toggleFavoriteOffer = (offerId: string) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(offerId)) next.delete(offerId);
+      else next.add(offerId);
+      window.localStorage.setItem(FAVORITE_OFFERS_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   // URLs déjà présentes dans le suivi de candidatures — pour repérer les offres déjà ajoutées.
   const existingUrls = useMemo(
@@ -120,8 +187,9 @@ function OffresPage() {
         data: {
           motsCles,
           page: targetPage,
+          pageSize,
           ...(departement.trim() ? { departement: departement.trim() } : {}),
-          ...(typeContrat ? { typeContrat } : {}),
+          ...(API_CONTRACT_CODES.has(typeContrat) ? { typeContrat } : {}),
         },
       });
       if (!result.ok) {
@@ -152,12 +220,15 @@ function OffresPage() {
       toast.error("Renseignez des mots-clés avant d'enregistrer la recherche.");
       return;
     }
-    const saved: SavedSearch = { motsCles, departement, typeContrat };
+    const saved: SavedSearch = { motsCles, departement, typeContrat, pageSize };
     window.localStorage.setItem(SAVED_SEARCH_KEY, JSON.stringify(saved));
     toast.success("Recherche enregistrée — elle sera proposée à chaque visite.");
   };
 
-  const visibleOffers = remoteOnly ? offers.filter(looksRemote) : offers;
+  const visibleOffers = offers
+    .filter((o) => matchesContractFilter(o, typeContrat))
+    .filter((o) => (remoteOnly ? looksRemote(o) : true))
+    .filter((o) => (favoritesOnly ? favoriteIds.has(o.id) : true));
 
   // Regroupe les offres par région/département (préfixe du champ "lieu", ex. "75 - Paris") pour
   // rendre visible la répartition géographique — l'API ne renvoie pas de résultats triés par zone.
@@ -178,7 +249,7 @@ function OffresPage() {
       company: offer.entreprise,
       position: offer.intitule,
       location: offer.lieu,
-      contract_type: mapContractType(offer.typeContrat),
+      contract_type: mapContractType(offer),
       salary: offer.salaire,
       job_url: offer.url,
       source: "france_travail",
@@ -186,6 +257,7 @@ function OffresPage() {
       application_date: new Date().toISOString().slice(0, 10),
       status: "to_target",
       notes: offer.description,
+      favorite: favoriteIds.has(offer.id),
     });
     setFormOpen(true);
   };
@@ -198,7 +270,7 @@ function OffresPage() {
       description="Recherchez des offres et ajoutez-les directement à vos candidatures."
     >
       <div className="space-y-4">
-        <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
+        <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -220,13 +292,26 @@ function OffresPage() {
           />
           <select
             value={typeContrat}
-            onChange={(e) => setTypeContrat(e.target.value)}
+            onChange={(e) => setTypeContrat(e.target.value as ContractFilter)}
             aria-label="Type de contrat"
             className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs sm:w-48"
           >
             {CONTRACT_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            aria-label="Nombre d'offres par page"
+            title="Nombre d'offres par page"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs sm:w-40"
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size} offres / page
               </option>
             ))}
           </select>
@@ -243,15 +328,26 @@ function OffresPage() {
           </Button>
         </form>
 
-        <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={remoteOnly}
-            onChange={(e) => setRemoteOnly(e.target.checked)}
-            className="size-4 rounded border-input"
-          />
-          Télétravail uniquement (détecté depuis l'annonce)
-        </label>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={remoteOnly}
+              onChange={(e) => setRemoteOnly(e.target.checked)}
+              className="size-4 rounded border-input"
+            />
+            Télétravail uniquement (détecté depuis l'annonce)
+          </label>
+          <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={favoritesOnly}
+              onChange={(e) => setFavoritesOnly(e.target.checked)}
+              className="size-4 rounded border-input"
+            />
+            Favoris uniquement
+          </label>
+        </div>
 
         {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -286,22 +382,41 @@ function OffresPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {group.items.map((offer) => {
                   const alreadyAdded = offer.url ? existingUrls.has(offer.url) : false;
+                  const isFavorite = favoriteIds.has(offer.id);
                   return (
                     <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
                       <CardContent className="space-y-2 p-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium leading-snug">{offer.intitule}</p>
-                          {offer.url ? (
-                            <a
-                              href={offer.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="shrink-0 text-muted-foreground hover:text-primary"
-                              title="Voir l'offre originale"
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleFavoriteOffer(offer.id)}
+                              aria-label={
+                                isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"
+                              }
+                              title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                              className="text-muted-foreground hover:text-amber-500"
                             >
-                              <ExternalLink className="size-4" />
-                            </a>
-                          ) : null}
+                              <Star
+                                className={cn(
+                                  "size-4",
+                                  isFavorite && "fill-amber-400 text-amber-400",
+                                )}
+                              />
+                            </button>
+                            {offer.url ? (
+                              <a
+                                href={offer.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-muted-foreground hover:text-primary"
+                                title="Voir l'offre originale"
+                              >
+                                <ExternalLink className="size-4" />
+                              </a>
+                            ) : null}
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                           {offer.entreprise ? (

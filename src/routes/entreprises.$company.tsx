@@ -245,7 +245,9 @@ function CompanyDetailPage() {
                           {formatDate(followUp.date) || "—"} · {application.position}
                         </p>
                         {followUp.description ? (
-                          <p className="mt-1 text-sm text-muted-foreground">{followUp.description}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {followUp.description}
+                          </p>
                         ) : null}
                       </div>
                       <span
@@ -283,6 +285,7 @@ function CompanyDetailPage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
     </AppLayout>
   );

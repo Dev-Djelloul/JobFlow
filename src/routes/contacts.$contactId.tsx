@@ -248,9 +248,7 @@ function ContactDetailPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(followUp.date) || "—"} · {application.position} ·{" "}
-                      {isOverdue(followUp)
-                        ? "En retard"
-                        : FOLLOW_UP_STATUS_LABELS[followUp.status]}
+                      {isOverdue(followUp) ? "En retard" : FOLLOW_UP_STATUS_LABELS[followUp.status]}
                     </p>
                     {followUp.description ? (
                       <p className="mt-1 text-sm text-muted-foreground">{followUp.description}</p>
@@ -330,6 +328,7 @@ function ContactDetailPage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
     </AppLayout>
   );

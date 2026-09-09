@@ -60,11 +60,19 @@ export function buildApplicationTimeline(application: Application): TimelineEven
   const events: TimelineEvent[] = [];
 
   const createdDate = dayKey(application.application_date) || dayKey(application.created_at);
+  // Le libellé reflète le statut réellement choisi à la création, pas un "envoyée" systématique :
+  // une candidature ajoutée avec le statut "À cibler" n'a pas encore été envoyée.
+  const initialStatus = application.status_history?.[0]?.status ?? application.status;
+  const creationTitle = application.application_date
+    ? initialStatus === "applied"
+      ? "Candidature envoyée"
+      : `Candidature ajoutée — ${STATUS_LABELS[initialStatus] ?? initialStatus}`
+    : "Candidature créée";
   events.push({
     id: `app-${application.id}`,
     date: createdDate,
     type: "application",
-    title: application.application_date ? "Candidature envoyée" : "Candidature créée",
+    title: creationTitle,
     description: `${application.position} — ${application.company}`,
     status: application.status,
     source: "application",
@@ -100,6 +108,7 @@ export function buildApplicationTimeline(application: Application): TimelineEven
   }
 
   return events.sort(
-    (a, b) => (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31") || a.id.localeCompare(b.id),
+    (a, b) =>
+      (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31") || a.id.localeCompare(b.id),
   );
 }

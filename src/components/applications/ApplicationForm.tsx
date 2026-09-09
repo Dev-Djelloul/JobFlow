@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
+import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +34,7 @@ import {
   type Application,
   type ApplicationInput,
 } from "@/types/application";
+import { cn } from "@/lib/utils";
 
 const schema = z.object({
   company: z.string().trim().min(1, "L'entreprise est obligatoire").max(80),
@@ -50,6 +52,7 @@ const schema = z.object({
   notes: z.string().default(""),
   next_action: z.string().trim().max(160).default(""),
   follow_up_date: z.string().default(""),
+  favorite: z.boolean().default(false),
 });
 
 type FormValues = z.input<typeof schema>;
@@ -70,6 +73,7 @@ const emptyValues = (): FormValues => ({
   notes: "",
   next_action: "",
   follow_up_date: "",
+  favorite: false,
 });
 
 interface Props {
@@ -114,6 +118,7 @@ export function ApplicationForm({
             notes: application.notes,
             next_action: application.next_action,
             follow_up_date: application.follow_up_date,
+            favorite: application.favorite ?? false,
           }
         : { ...emptyValues(), ...initialValues },
     );
@@ -125,7 +130,20 @@ export function ApplicationForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{application ? "Modifier la candidature" : "Ajouter une candidature"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 pr-6">
+            {application ? "Modifier la candidature" : "Ajouter une candidature"}
+            <button
+              type="button"
+              onClick={() => setValue("favorite", !watch("favorite"))}
+              aria-label={watch("favorite") ? "Retirer des favoris" : "Ajouter aux favoris"}
+              title={watch("favorite") ? "Retirer des favoris" : "Ajouter aux favoris"}
+              className="text-muted-foreground hover:text-amber-500"
+            >
+              <Star
+                className={cn("size-4", watch("favorite") && "fill-amber-400 text-amber-400")}
+              />
+            </button>
+          </DialogTitle>
           <DialogDescription>
             Les champs entreprise, poste et date de candidature sont obligatoires.
           </DialogDescription>
@@ -155,7 +173,9 @@ export function ApplicationForm({
           <div className="grid gap-1.5">
             <Label htmlFor="position">Poste *</Label>
             <Input id="position" {...register("position")} placeholder="Développeuse Frontend" />
-            {errors.position && <p className="text-xs text-destructive">{errors.position.message}</p>}
+            {errors.position && (
+              <p className="text-xs text-destructive">{errors.position.message}</p>
+            )}
           </div>
 
           <div className="grid gap-1.5">
@@ -288,7 +308,11 @@ export function ApplicationForm({
 
           <div className="grid gap-1.5">
             <Label htmlFor="next_action">Prochaine action</Label>
-            <Input id="next_action" {...register("next_action")} placeholder="Relancer le recruteur" />
+            <Input
+              id="next_action"
+              {...register("next_action")}
+              placeholder="Relancer le recruteur"
+            />
           </div>
 
           <div className="grid gap-1.5">
@@ -302,7 +326,12 @@ export function ApplicationForm({
 
           <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" rows={4} {...register("notes")} placeholder="Contacts, ressenti, prochaines étapes…" />
+            <Textarea
+              id="notes"
+              rows={4}
+              {...register("notes")}
+              placeholder="Contacts, ressenti, prochaines étapes…"
+            />
             {errors.notes && <p className="text-xs text-destructive">{errors.notes.message}</p>}
           </div>
 

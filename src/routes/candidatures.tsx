@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpDown, Plus, Search } from "lucide-react";
+import { ArrowUpDown, Plus, Search, Star } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   APPLICATION_SOURCES,
   CONTRACT_TYPES,
@@ -65,6 +66,7 @@ function ApplicationsPage() {
   const [contract, setContract] = useState("all");
   const [source, setSource] = useState("all");
   const [sortDesc, setSortDesc] = useState(true);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -74,6 +76,7 @@ function ApplicationsPage() {
       .filter((a) =>
         source === "all" ? true : source === "none" ? !a.source : a.source === source,
       )
+      .filter((a) => (favoritesOnly ? !!a.favorite : true))
       .filter((a) =>
         q === ""
           ? true
@@ -83,7 +86,7 @@ function ApplicationsPage() {
         const cmp = (a.application_date || "").localeCompare(b.application_date || "");
         return sortDesc ? -cmp : cmp;
       });
-  }, [applications, search, status, contract, source, sortDesc]);
+  }, [applications, search, status, contract, source, favoritesOnly, sortDesc]);
 
   return (
     <AppLayout
@@ -157,6 +160,15 @@ function ApplicationsPage() {
             </Button>
           </div>
 
+          <Button
+            variant={favoritesOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFavoritesOnly((v) => !v)}
+          >
+            <Star className={cn("size-4", favoritesOnly && "fill-current")} />
+            Favoris uniquement
+          </Button>
+
           {filtered.length === 0 ? (
             <EmptyState
               title={applications.length === 0 ? "Aucune candidature" : "Aucun résultat"}
@@ -190,6 +202,7 @@ function ApplicationsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-8" />
                       <TableHead>Entreprise</TableHead>
                       <TableHead>Poste</TableHead>
                       <TableHead className="hidden md:table-cell">Localisation</TableHead>
@@ -206,6 +219,26 @@ function ApplicationsPage() {
                         className="cursor-pointer"
                         onClick={() => dialogs.openDetail(app)}
                       >
+                        <TableCell>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dialogs.toggleFavorite(app.id);
+                            }}
+                            aria-label={
+                              app.favorite ? "Retirer des favoris" : "Ajouter aux favoris"
+                            }
+                            className="text-muted-foreground hover:text-amber-500"
+                          >
+                            <Star
+                              className={cn(
+                                "size-4",
+                                app.favorite && "fill-amber-400 text-amber-400",
+                              )}
+                            />
+                          </button>
+                        </TableCell>
                         <TableCell className="font-medium">{app.company}</TableCell>
                         <TableCell>
                           <span className="block max-w-[220px] truncate">{app.position}</span>
@@ -251,6 +284,7 @@ function ApplicationsPage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
     </AppLayout>
   );

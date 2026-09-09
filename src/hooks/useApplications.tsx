@@ -60,7 +60,10 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
             ...a,
             ...input,
             status_history: statusChanged
-              ? [...a.status_history, { status: input.status!, date: new Date().toISOString().slice(0, 10) }]
+              ? [
+                  ...a.status_history,
+                  { status: input.status!, date: new Date().toISOString().slice(0, 10) },
+                ]
               : a.status_history,
             updated_at: new Date().toISOString(),
           };
@@ -78,6 +81,15 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
   const changeStatus = useCallback(
     (id: string, status: ApplicationStatus) => updateApplication(id, { status }),
     [updateApplication],
+  );
+
+  const toggleFavorite = useCallback(
+    (id: string) => {
+      const app = applications.find((a) => a.id === id);
+      if (!app) return;
+      updateApplication(id, { favorite: !app.favorite });
+    },
+    [applications, updateApplication],
   );
 
   const mutateFollowUps = useCallback(
@@ -139,10 +151,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
     [applications, persist],
   );
 
-  const replaceAllApplications = useCallback(
-    (apps: Application[]) => persist(apps),
-    [persist],
-  );
+  const replaceAllApplications = useCallback((apps: Application[]) => persist(apps), [persist]);
 
   const resetDemoData = useCallback(() => {
     if (typeof window !== "undefined") window.localStorage.removeItem("jobflow.applications.v1");
@@ -157,6 +166,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       updateApplication,
       deleteApplication,
       changeStatus,
+      toggleFavorite,
       addFollowUp,
       updateFollowUp,
       deleteFollowUp,
@@ -165,7 +175,22 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       resetDemoData,
       replaceAllApplications,
     }),
-    [applications, loading, createApplication, updateApplication, deleteApplication, changeStatus, addFollowUp, updateFollowUp, deleteFollowUp, getApplication, setApplicationContacts, resetDemoData, replaceAllApplications],
+    [
+      applications,
+      loading,
+      createApplication,
+      updateApplication,
+      deleteApplication,
+      changeStatus,
+      toggleFavorite,
+      addFollowUp,
+      updateFollowUp,
+      deleteFollowUp,
+      getApplication,
+      setApplicationContacts,
+      resetDemoData,
+      replaceAllApplications,
+    ],
   );
 
   return <ApplicationsContext.Provider value={value}>{children}</ApplicationsContext.Provider>;

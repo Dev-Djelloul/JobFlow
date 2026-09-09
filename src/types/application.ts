@@ -1,11 +1,4 @@
-export const STATUSES = [
-  "to_target",
-  "applied",
-  "interview",
-  "test",
-  "offer",
-  "rejected",
-] as const;
+export const STATUSES = ["to_target", "applied", "interview", "test", "offer", "rejected"] as const;
 
 export type ApplicationStatus = (typeof STATUSES)[number];
 
@@ -102,6 +95,8 @@ export interface Application {
   follow_ups: FollowUp[];
   /** Identifiants des contacts associés (même entreprise uniquement). */
   contact_ids: string[];
+  /** Mise en avant manuelle — absente des données antérieures (traitée comme false). */
+  favorite?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -109,7 +104,6 @@ export interface Application {
 export type ApplicationInput = Omit<
   Application,
   "id" | "created_at" | "updated_at" | "status_history" | "follow_ups" | "contact_ids"
-
 >;
 
 export interface UserSettings {

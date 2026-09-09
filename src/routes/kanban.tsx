@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -122,7 +122,27 @@ function KanbanPage() {
                             dragId === app.id && "opacity-50",
                           )}
                         >
-                          <p className="text-sm font-medium leading-snug">{app.position}</p>
+                          <div className="flex items-start justify-between gap-1">
+                            <p className="text-sm font-medium leading-snug">{app.position}</p>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dialogs.toggleFavorite(app.id);
+                              }}
+                              aria-label={
+                                app.favorite ? "Retirer des favoris" : "Ajouter aux favoris"
+                              }
+                              className="shrink-0 text-muted-foreground hover:text-amber-500"
+                            >
+                              <Star
+                                className={cn(
+                                  "size-3.5",
+                                  app.favorite && "fill-amber-400 text-amber-400",
+                                )}
+                              />
+                            </button>
+                          </div>
                           <p className="text-xs text-muted-foreground">{app.company}</p>
                           <p className="mt-1 text-[11px] text-muted-foreground">
                             {app.contract_type} · {formatDate(app.application_date)}
@@ -172,6 +192,7 @@ function KanbanPage() {
         onEdit={dialogs.openEdit}
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
       />
     </AppLayout>
   );

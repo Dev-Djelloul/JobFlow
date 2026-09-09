@@ -97,7 +97,8 @@ export interface FranceTravailSearchResult {
   error?: string;
 }
 
-const PAGE_SIZE = 20;
+// L'API France Travail limite chaque appel à 150 offres maximum (span de "range").
+const MAX_PAGE_SIZE = 150;
 
 export const searchFranceTravailOffers = createServerFn({ method: "GET" })
   .validator(
@@ -105,6 +106,8 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
       motsCles: z.string().trim().min(1).max(200),
       departement: z.string().trim().max(3).optional(),
       typeContrat: z.string().trim().max(10).optional(),
+      /** Nombre d'offres par page, choisi côté client (20 à 150). */
+      pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).default(20),
       /** Index de la page à charger (0-based) — permet le "Voir plus d'offres" côté client. */
       page: z.number().int().min(0).max(50).default(0),
     }),
@@ -116,8 +119,8 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
       url.searchParams.set("motsCles", data.motsCles);
       if (data.departement) url.searchParams.set("departement", data.departement);
       if (data.typeContrat) url.searchParams.set("typeContrat", data.typeContrat);
-      const start = data.page * PAGE_SIZE;
-      url.searchParams.set("range", `${start}-${start + PAGE_SIZE - 1}`);
+      const start = data.page * data.pageSize;
+      url.searchParams.set("range", `${start}-${start + data.pageSize - 1}`);
       url.searchParams.set("sort", "1"); // tri par date de création décroissante
 
       const res = await fetch(url, {
