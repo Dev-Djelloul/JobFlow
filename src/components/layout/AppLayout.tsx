@@ -26,6 +26,8 @@ import { useSettings } from "@/hooks/useSettings";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
   { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/actions", label: "Actions", icon: ListTodo },
@@ -33,8 +35,6 @@ const NAV = [
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/emails", label: "Emails", icon: Mail },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
 
