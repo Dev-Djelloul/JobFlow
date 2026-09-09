@@ -1,11 +1,21 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Linkedin, Mail, Phone, Plus, Search, UserRound } from "lucide-react";
+import { Linkedin, Mail, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -37,6 +47,7 @@ import {
   type ContactSort,
 } from "@/lib/contacts";
 import { formatDate } from "@/lib/format";
+import type { Contact } from "@/types/contact";
 
 export const Route = createFileRoute("/contacts/")({
   head: () => ({
@@ -58,12 +69,28 @@ export const Route = createFileRoute("/contacts/")({
 });
 
 function ContactsPage() {
-  const { contacts, loading, createContact } = useContacts();
-  const { applications } = useApplications();
+  const { contacts, loading, createContact, deleteContact } = useContacts();
+  const { applications, setApplicationContacts } = useApplications();
   const [query, setQuery] = useState("");
   const [company, setCompany] = useState("all");
   const [sort, setSort] = useState<ContactSort>("name");
   const [formOpen, setFormOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+
+  const handleDeleteContact = () => {
+    if (!contactToDelete) return;
+    for (const app of applications) {
+      if ((app.contact_ids ?? []).includes(contactToDelete.id)) {
+        setApplicationContacts(
+          app.id,
+          (app.contact_ids ?? []).filter((id) => id !== contactToDelete.id),
+        );
+      }
+    }
+    deleteContact(contactToDelete.id);
+    toast.success("Contact supprimé");
+    setContactToDelete(null);
+  };
 
   const companyOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -153,20 +180,36 @@ function ContactsPage() {
               {/* Mobile : cartes */}
               <div className="grid gap-3 md:hidden">
                 {filtered.map((contact) => (
-                  <Link
-                    key={contact.id}
-                    to="/contacts/$contactId"
-                    params={{ contactId: contact.id }}
-                    className="rounded-lg border bg-card p-3"
-                  >
-                    <div className="flex items-center gap-2 font-medium">
-                      <UserRound className="size-4 text-muted-foreground" />
-                      {contactFullName(contact) || "Contact"}
+                  <div key={contact.id} className="rounded-lg border bg-card p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        to="/contacts/$contactId"
+                        params={{ contactId: contact.id }}
+                        className="min-w-0 flex-1"
+                      >
+                        <div className="flex items-center gap-2 font-medium">
+                          <UserRound className="size-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{contactFullName(contact) || "Contact"}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {[contact.job_title, contact.company].filter(Boolean).join(" · ")}
+                        </p>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        aria-label={`Supprimer ${contactFullName(contact) || "ce contact"}`}
+                        onClick={() => setContactToDelete(contact)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {[contact.job_title, contact.company].filter(Boolean).join(" · ")}
-                    </p>
-                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    <Link
+                      to="/contacts/$contactId"
+                      params={{ contactId: contact.id }}
+                      className="mt-2 block space-y-1 text-sm text-muted-foreground"
+                    >
                       {contact.email ? (
                         <p className="flex items-center gap-2 truncate">
                           <Mail className="size-3.5" /> {contact.email}
@@ -186,8 +229,8 @@ function ContactsPage() {
                         Dernière activité :{" "}
                         {formatDate(contactLastActivity(applications, contact)) || "—"}
                       </p>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 ))}
               </div>
 
@@ -205,6 +248,9 @@ function ContactsPage() {
                           <TableHead>Téléphone</TableHead>
                           <TableHead>LinkedIn</TableHead>
                           <TableHead>Dernière activité</TableHead>
+                          <TableHead className="w-10">
+                            <span className="sr-only">Actions</span>
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -244,6 +290,17 @@ function ContactsPage() {
                             <TableCell className="whitespace-nowrap">
                               {formatDate(contactLastActivity(applications, contact)) || "—"}
                             </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-destructive"
+                                aria-label={`Supprimer ${contactFullName(contact) || "ce contact"}`}
+                                onClick={() => setContactToDelete(contact)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -269,6 +326,31 @@ function ContactsPage() {
           }
         }}
       />
+
+      <AlertDialog
+        open={contactToDelete !== null}
+        onOpenChange={(o) => !o && setContactToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce contact ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(contactToDelete && contactFullName(contactToDelete)) || "Ce contact"} sera supprimé
+              définitivement, ainsi que ses liens avec vos candidatures. Cette action est
+              irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteContact}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
