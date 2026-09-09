@@ -236,7 +236,13 @@ function OffresPage() {
         setSearched(true);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "La recherche a échoué (erreur inattendue).");
+      // Erreur inattendue (pas un ok:false renvoyé proprement par le serveur) : on affiche le
+      // maximum de contexte disponible pour pouvoir diagnostiquer sans devoir rouvrir la console.
+      const detail =
+        e instanceof Error
+          ? `${e.name}: ${e.message}${e.stack ? `\n${e.stack.split("\n").slice(0, 3).join("\n")}` : ""}`
+          : String(e);
+      setError(`Erreur inattendue (${source}) — ${detail}`);
     } finally {
       if (isFirstPage) setLoading(false);
       else setLoadingMore(false);
@@ -425,7 +431,7 @@ function OffresPage() {
         </div>
 
         {error ? (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <p className="whitespace-pre-wrap break-words rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
           </p>
         ) : null}
