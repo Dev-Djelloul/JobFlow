@@ -47,7 +47,7 @@ const schema = z.object({
   experience_level: z.string().trim().max(120).default(""),
   application_date: z.string().min(1, "La date est obligatoire"),
   status: z.enum(STATUSES),
-  notes: z.string().max(2000).default(""),
+  notes: z.string().max(6000, "6000 caractères maximum").default(""),
   next_action: z.string().trim().max(160).default(""),
   follow_up_date: z.string().default(""),
 });
@@ -303,6 +303,7 @@ export function ApplicationForm({
           <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea id="notes" rows={4} {...register("notes")} placeholder="Contacts, ressenti, prochaines étapes…" />
+            {errors.notes && <p className="text-xs text-destructive">{errors.notes.message}</p>}
           </div>
 
           <DialogFooter className="sm:col-span-2">
