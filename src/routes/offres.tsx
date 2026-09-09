@@ -375,13 +375,16 @@ function OffresPage() {
         <div className="space-y-6">
           {groupedOffers.map((group) => (
             <div key={group.zone} className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <MapPin className="size-4" />
-                {group.zone}
-                <span className="font-normal">
-                  ({group.items.length} offre{group.items.length > 1 ? "s" : ""})
-                </span>
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="flex shrink-0 items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5">
+                  <MapPin className="size-4 text-primary" />
+                  <span className="text-sm font-bold text-primary">{group.zone}</span>
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
+                    {group.items.length}
+                  </span>
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {group.items.map((offer) => {
                   const alreadyAdded = offer.url ? existingUrls.has(offer.url) : false;
