@@ -56,13 +56,16 @@ function OffresPage() {
     setLoading(true);
     setError(null);
     try {
-      const results = await searchFranceTravailOffers({ data: { motsCles } });
-      setOffers(results);
-      setSearched(true);
-    } catch {
-      setError(
-        "La recherche a échoué. Vérifiez que l'API France Travail est correctement configurée (identifiants côté serveur).",
-      );
+      const result = await searchFranceTravailOffers({ data: { motsCles } });
+      if (!result.ok) {
+        setError(result.error ?? "La recherche a échoué.");
+        setOffers([]);
+      } else {
+        setOffers(result.offers);
+        setSearched(true);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "La recherche a échoué (erreur inattendue).");
     } finally {
       setLoading(false);
     }

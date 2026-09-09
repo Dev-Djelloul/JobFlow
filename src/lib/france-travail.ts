@@ -32,12 +32,15 @@ interface RawFtOffer {
   origineOffre?: { urlOrigine?: string };
 }
 
+/** Erreur porteuse d'un message détaillé destiné à remonter tel quel jusqu'au client. */
+class FranceTravailError extends Error {}
+
 async function getAccessToken(): Promise<string> {
   const clientId = process.env["FT_CLIENT_ID"];
   const clientSecret = process.env["FT_CLIENT_SECRET"];
   if (!clientId || !clientSecret) {
-    throw new Error(
-      "France Travail non configuré : variables FT_CLIENT_ID / FT_CLIENT_SECRET manquantes.",
+    throw new FranceTravailError(
+      "France Travail non configuré : variables FT_CLIENT_ID / FT_CLIENT_SECRET manquantes sur le Worker.",
     );
   }
 
@@ -52,10 +55,16 @@ async function getAccessToken(): Promise<string> {
     }),
   });
   if (!res.ok) {
-    throw new Error(`Authentification France Travail échouée (${res.status}).`);
+    const body = await res.text().catch(() => "");
+    throw new FranceTravailError(
+      `Authentification France Travail échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+    );
   }
   const json = (await res.json()) as { access_token?: string };
-  if (!json.access_token) throw new Error("Authentification France Travail : jeton manquant.");
+  if (!json.access_token)
+    throw new FranceTravailError(
+      "Authentification France Travail : jeton manquant dans la réponse.",
+    );
   return json.access_token;
 }
 
@@ -79,22 +88,42 @@ function mapOffer(raw: RawFtOffer): FranceTravailOffer {
  * d'API ne doivent jamais atteindre le navigateur, et l'API ne permet pas les appels CORS
  * directs depuis un site tiers.
  */
+export interface FranceTravailSearchResult {
+  ok: boolean;
+  offers: FranceTravailOffer[];
+  /** Détail de l'erreur, affiché tel quel côté client pour faciliter le diagnostic. */
+  error?: string;
+}
+
 export const searchFranceTravailOffers = createServerFn({ method: "GET" })
   .validator(z.object({ motsCles: z.string().trim().min(1).max(200) }))
-  .handler(async ({ data }): Promise<FranceTravailOffer[]> => {
-    const token = await getAccessToken();
-    const url = new URL(SEARCH_URL);
-    url.searchParams.set("motsCles", data.motsCles);
-    url.searchParams.set("range", "0-19");
-    url.searchParams.set("sort", "1"); // tri par date de création décroissante
+  .handler(async ({ data }): Promise<FranceTravailSearchResult> => {
+    try {
+      const token = await getAccessToken();
+      const url = new URL(SEARCH_URL);
+      url.searchParams.set("motsCles", data.motsCles);
+      url.searchParams.set("range", "0-19");
+      url.searchParams.set("sort", "1"); // tri par date de création décroissante
 
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
-    // L'API répond 206 (Partial Content) en cas de succès paginé, 200 sinon.
-    if (!res.ok && res.status !== 206) {
-      throw new Error(`Recherche France Travail échouée (${res.status}).`);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      // L'API répond 206 (Partial Content) en cas de succès paginé, 200 sinon.
+      if (!res.ok && res.status !== 206) {
+        const body = await res.text().catch(() => "");
+        return {
+          ok: false,
+          offers: [],
+          error: `Recherche France Travail échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+        };
+      }
+      const json = (await res.json()) as { resultats?: RawFtOffer[] };
+      return { ok: true, offers: (json.resultats ?? []).map(mapOffer) };
+    } catch (e) {
+      return {
+        ok: false,
+        offers: [],
+        error: e instanceof Error ? e.message : "Erreur inconnue.",
+      };
     }
-    const json = (await res.json()) as { resultats?: RawFtOffer[] };
-    return (json.resultats ?? []).map(mapOffer);
   });
