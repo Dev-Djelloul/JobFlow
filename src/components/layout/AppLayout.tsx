@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UserAvatar } from "@/components/profile/UserAvatar";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
+import { QuickAddApplication } from "@/components/common/QuickAddApplication";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -222,6 +223,8 @@ export function AppLayout({
           {children}
         </main>
       </div>
+
+      <QuickAddApplication />
     </div>
   );
 }

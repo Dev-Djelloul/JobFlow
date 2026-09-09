@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
@@ -120,6 +127,27 @@ function KanbanPage() {
                           <p className="mt-1 text-[11px] text-muted-foreground">
                             {app.contract_type} · {formatDate(app.application_date)}
                           </p>
+                          {/* Alternative au glisser-déposer (HTML5 DnD non tactile : ne
+                              fonctionne pas sur mobile/tablette). */}
+                          <Select
+                            value={app.status}
+                            onValueChange={(v) => dialogs.setStatus(app.id, v as ApplicationStatus)}
+                          >
+                            <SelectTrigger
+                              className="mt-2 h-7 w-full text-xs"
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Changer le statut"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              {STATUSES.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  {STATUS_LABELS[s]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </Card>
                       ))
                     )}
