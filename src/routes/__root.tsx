@@ -16,6 +16,8 @@ import { SettingsProvider } from "@/hooks/useSettings";
 import { ApplicationsProvider } from "@/hooks/useApplications";
 import { ContactsProvider } from "@/hooks/useContacts";
 import { EmailTemplatesProvider } from "@/hooks/useEmailTemplates";
+import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 
 
 function NotFoundComponent() {
@@ -96,6 +98,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#2f4f9e" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Jobee Flow" },
     ],
     links: [
       {
@@ -109,6 +116,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
     ],
   }),
 
@@ -144,6 +153,8 @@ function RootComponent() {
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
               <Toaster position="top-right" richColors />
+              <OfflineIndicator />
+              <UpdatePrompt />
             </EmailTemplatesProvider>
           </ContactsProvider>
         </ApplicationsProvider>

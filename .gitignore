@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+# vite-plugin-pwa dev-mode service worker artifacts
+dev-dist
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
