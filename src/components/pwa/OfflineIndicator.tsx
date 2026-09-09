@@ -18,6 +18,7 @@ export function OfflineIndicator() {
   const [showReconnected, setShowReconnected] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
   const [dismissedOffline, setDismissedOffline] = useState(false);
+  const [dismissedReconnected, setDismissedReconnected] = useState(false);
 
   useEffect(() => {
     if (!isOnline) {
@@ -29,6 +30,7 @@ export function OfflineIndicator() {
     }
     if (wasOffline) {
       setShowReconnected(true);
+      setDismissedReconnected(false);
       setWasOffline(false);
       const timer = setTimeout(() => setShowReconnected(false), RECONNECTED_AUTO_HIDE_MS);
       return () => clearTimeout(timer);
@@ -58,15 +60,24 @@ export function OfflineIndicator() {
     );
   }
 
-  if (showReconnected) {
+  if (showReconnected && !dismissedReconnected) {
     return (
       <div
         role="status"
         aria-live="polite"
-        className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-primary px-4 py-2 text-sm text-primary-foreground shadow-md"
+        className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-primary py-2 pl-4 pr-2 text-sm text-primary-foreground shadow-md"
       >
-        <Wifi className="size-4" aria-hidden="true" />
+        <Wifi className="size-4 shrink-0" aria-hidden="true" />
         Connexion rétablie
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-6 shrink-0 rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+          aria-label="Fermer"
+          onClick={() => setDismissedReconnected(true)}
+        >
+          <X className="size-3.5" />
+        </Button>
       </div>
     );
   }
