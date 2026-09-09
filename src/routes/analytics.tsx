@@ -114,7 +114,10 @@ function AnalyticsPage() {
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "fr"));
   }, [applications]);
 
-  const filtered = useMemo(() => filterApplications(applications, filters), [applications, filters]);
+  const filtered = useMemo(
+    () => filterApplications(applications, filters),
+    [applications, filters],
+  );
 
   const kpis = useMemo(() => computeKpis(filtered), [filtered]);
   const funnel = useMemo(() => buildFunnel(filtered), [filtered]);
@@ -244,7 +247,12 @@ function AnalyticsPage() {
               {/* KPIs */}
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <KpiCard label="Total candidatures" value={kpis.total} icon={Briefcase} />
-                <KpiCard label="Actives" value={kpis.active} icon={Clock} />
+                <KpiCard
+                  label="Actives"
+                  value={kpis.active}
+                  icon={Clock}
+                  tone="bg-info/10 text-info"
+                />
                 <KpiCard label="Entretiens" value={kpis.interviews} icon={Users} />
                 <KpiCard
                   label="Offres"
@@ -495,9 +503,9 @@ function AnalyticsPage() {
                 <CardContent className="space-y-4">
                   {sources.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      Aucune candidature ne comporte encore de source. Renseignez le champ
-                      « Source » dans le formulaire de candidature (ou lors d'un import CSV) pour
-                      voir ici les volumes, taux d'entretien, taux d'offre et délais par canal.
+                      Aucune candidature ne comporte encore de source. Renseignez le champ « Source
+                      » dans le formulaire de candidature (ou lors d'un import CSV) pour voir ici
+                      les volumes, taux d'entretien, taux d'offre et délais par canal.
                     </p>
                   ) : (
                     <>
@@ -519,7 +527,9 @@ function AnalyticsPage() {
                               <tr key={s.source} className="border-b last:border-0">
                                 <td className="py-2 pr-3">{s.label}</td>
                                 <td className="py-2 pr-3 text-right tabular-nums">{s.total}</td>
-                                <td className="py-2 pr-3 text-right tabular-nums">{s.interviews}</td>
+                                <td className="py-2 pr-3 text-right tabular-nums">
+                                  {s.interviews}
+                                </td>
                                 <td className="py-2 pr-3 text-right tabular-nums">{s.offers}</td>
                                 <td className="py-2 pr-3 text-right tabular-nums">
                                   {s.interviewRate === null ? "N/A" : formatRate(s.interviewRate)}

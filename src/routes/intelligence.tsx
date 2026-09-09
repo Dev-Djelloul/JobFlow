@@ -25,8 +25,23 @@ import {
   groupInsights,
   summarizeInsights,
   type ApplicationInsight,
+  type InsightPriority,
 } from "@/lib/intelligence";
 import { cn } from "@/lib/utils";
+
+const PRIORITY_TEXT_CLASSES: Record<InsightPriority, string> = {
+  critical: "text-destructive",
+  high: "text-warning-foreground dark:text-warning",
+  medium: "text-info",
+  low: "text-muted-foreground",
+};
+
+const PRIORITY_CHIP_CLASSES: Record<InsightPriority, string> = {
+  critical: "bg-destructive/10 text-destructive",
+  high: "bg-warning/15 text-warning-foreground dark:text-warning",
+  medium: "bg-info/10 text-info",
+  low: "bg-muted text-muted-foreground",
+};
 
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
@@ -182,9 +197,24 @@ function IntelligencePage() {
                 <CardContent className="flex items-center justify-between gap-4 p-5">
                   <div>
                     <p className="text-sm text-muted-foreground">{PRIORITY_LABELS[p]}</p>
-                    <p className="mt-1 font-display text-2xl font-bold">{summary[p]}</p>
+                    <p
+                      className={cn(
+                        "mt-1 font-display text-2xl font-bold",
+                        summary[p] > 0 && PRIORITY_TEXT_CLASSES[p],
+                      )}
+                    >
+                      {summary[p]}
+                    </p>
                   </div>
-                  <span aria-hidden className={cn("size-3 rounded-full", PRIORITY_DOTS[p])} />
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-lg",
+                      PRIORITY_CHIP_CLASSES[p],
+                    )}
+                  >
+                    <span className={cn("size-3 rounded-full", PRIORITY_DOTS[p])} />
+                  </span>
                 </CardContent>
               </Card>
             ))}

@@ -25,11 +25,7 @@ import {
   summarizeActions,
 } from "@/lib/actions";
 import { analyticsSummary, formatRate } from "@/lib/analytics";
-import {
-  PRIORITY_DOTS,
-  buildApplicationInsights,
-  summarizeInsights,
-} from "@/lib/intelligence";
+import { PRIORITY_DOTS, buildApplicationInsights, summarizeInsights } from "@/lib/intelligence";
 import { cn } from "@/lib/utils";
 import { formatDate, relativeDateLabel } from "@/lib/format";
 
@@ -52,14 +48,22 @@ export const Route = createFileRoute("/")({
   component: DashboardPage,
 });
 
+const STAT_TONE_CLASSES = {
+  primary: "bg-primary/10 text-primary",
+  success: "bg-success/12 text-success",
+  info: "bg-info/10 text-info",
+} as const;
+
 function StatCard({
   label,
   value,
   icon: Icon,
+  tone = "primary",
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
+  tone?: keyof typeof STAT_TONE_CLASSES;
 }) {
   return (
     <Card className="rounded-xl shadow-none">
@@ -68,7 +72,12 @@ function StatCard({
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="mt-1 font-display text-2xl font-bold">{value}</p>
         </div>
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div
+          className={cn(
+            "flex size-10 items-center justify-center rounded-lg",
+            STAT_TONE_CLASSES[tone],
+          )}
+        >
           <Icon className="size-5" />
         </div>
       </CardContent>
@@ -117,9 +126,19 @@ function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatCard label="Total candidatures" value={stats.total} icon={Briefcase} />
             <StatCard label="Envoyées" value={stats.sent} icon={Send} />
-            <StatCard label="Entretiens en cours" value={stats.interviews} icon={Users} />
-            <StatCard label="Offres reçues" value={stats.offers} icon={Trophy} />
-            <StatCard label="Taux de réponse" value={`${stats.responseRate} %`} icon={Percent} />
+            <StatCard
+              label="Entretiens en cours"
+              value={stats.interviews}
+              icon={Users}
+              tone="info"
+            />
+            <StatCard label="Offres reçues" value={stats.offers} icon={Trophy} tone="success" />
+            <StatCard
+              label="Taux de réponse"
+              value={`${stats.responseRate} %`}
+              icon={Percent}
+              tone="info"
+            />
           </div>
 
           <Card className="rounded-xl shadow-none">
@@ -135,7 +154,11 @@ function DashboardPage() {
                       <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     tickLine={false}
@@ -212,8 +235,22 @@ function DashboardPage() {
               ) : (
                 <>
                   <p className="text-xs text-muted-foreground">
-                    {insightSummary.critical} critique(s) · {insightSummary.high} prioritaire(s) ·{" "}
-                    {insightSummary.total} au total
+                    {insightSummary.critical > 0 ? (
+                      <span className="font-medium text-destructive">
+                        {insightSummary.critical} critique(s)
+                      </span>
+                    ) : (
+                      `${insightSummary.critical} critique(s)`
+                    )}{" "}
+                    ·{" "}
+                    {insightSummary.high > 0 ? (
+                      <span className="font-medium text-warning-foreground dark:text-warning">
+                        {insightSummary.high} prioritaire(s)
+                      </span>
+                    ) : (
+                      `${insightSummary.high} prioritaire(s)`
+                    )}{" "}
+                    · {insightSummary.total} au total
                   </p>
                   {topInsights.map((insight) => (
                     <div
@@ -245,7 +282,6 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
-
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="rounded-xl shadow-none">
               <CardHeader>
@@ -253,7 +289,10 @@ function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {latest.map((app) => (
-                  <div key={app.id} className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{app.position}</p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -282,8 +321,22 @@ function DashboardPage() {
                 ) : (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      {actionSummary.overdue} en retard · {actionSummary.today} aujourd'hui ·{" "}
-                      {actionSummary.total} au total
+                      {actionSummary.overdue > 0 ? (
+                        <span className="font-medium text-destructive">
+                          {actionSummary.overdue} en retard
+                        </span>
+                      ) : (
+                        `${actionSummary.overdue} en retard`
+                      )}{" "}
+                      ·{" "}
+                      {actionSummary.today > 0 ? (
+                        <span className="font-medium text-warning-foreground dark:text-warning">
+                          {actionSummary.today} aujourd'hui
+                        </span>
+                      ) : (
+                        `${actionSummary.today} aujourd'hui`
+                      )}{" "}
+                      · {actionSummary.total} au total
                     </p>
                     {nextActions.map((action) => (
                       <div

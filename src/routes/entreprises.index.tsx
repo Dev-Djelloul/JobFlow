@@ -23,8 +23,9 @@ import {
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useApplications } from "@/hooks/useApplications";
-import { buildCompanies } from "@/lib/companies";
+import { buildCompanies, isOverdue } from "@/lib/companies";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { STATUSES, STATUS_LABELS } from "@/types/application";
 
 export const Route = createFileRoute("/entreprises/")({
@@ -158,14 +159,34 @@ function CompaniesPage() {
                           <ChevronRight className="size-4 text-muted-foreground" />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {c.total} candidature(s) · {c.interviews} entretien(s) · {c.offers} offre(s)
-                          · {c.rejected} refus
+                          {c.total} candidature(s) · {c.interviews} entretien(s) ·{" "}
+                          <span className="font-medium text-success">{c.offers} offre(s)</span> ·{" "}
+                          {c.rejected > 0 ? (
+                            <span className="font-medium text-destructive">{c.rejected} refus</span>
+                          ) : (
+                            "0 refus"
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Dernière activité : {formatDate(c.lastActivity) || "—"}
-                          {c.nextFollowUp
-                            ? ` · Relance le ${formatDate(c.nextFollowUp.followUp.date)}`
-                            : ""}
+                          {c.nextFollowUp ? (
+                            <>
+                              {" · Relance le "}
+                              <span
+                                className={
+                                  isOverdue(c.nextFollowUp.followUp)
+                                    ? "font-medium text-destructive"
+                                    : undefined
+                                }
+                              >
+                                {isOverdue(c.nextFollowUp.followUp)
+                                  ? "en retard"
+                                  : formatDate(c.nextFollowUp.followUp.date)}
+                              </span>
+                            </>
+                          ) : (
+                            ""
+                          )}
                         </p>
                       </CardContent>
                     </Card>
@@ -203,13 +224,33 @@ function CompaniesPage() {
                           </TableCell>
                           <TableCell className="text-right">{c.total}</TableCell>
                           <TableCell className="text-right">{c.interviews}</TableCell>
-                          <TableCell className="text-right">{c.offers}</TableCell>
-                          <TableCell className="text-right">{c.rejected}</TableCell>
+                          <TableCell className="text-right font-medium text-success">
+                            {c.offers}
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              "text-right",
+                              c.rejected > 0 && "font-medium text-destructive",
+                            )}
+                          >
+                            {c.rejected}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {formatDate(c.lastActivity) || "—"}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {c.nextFollowUp ? formatDate(c.nextFollowUp.followUp.date) : "—"}
+                          <TableCell
+                            className={cn(
+                              "whitespace-nowrap",
+                              c.nextFollowUp &&
+                                isOverdue(c.nextFollowUp.followUp) &&
+                                "font-medium text-destructive",
+                            )}
+                          >
+                            {c.nextFollowUp
+                              ? isOverdue(c.nextFollowUp.followUp)
+                                ? "En retard"
+                                : formatDate(c.nextFollowUp.followUp.date)
+                              : "—"}
                           </TableCell>
                         </TableRow>
                       ))}

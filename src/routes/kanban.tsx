@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
+import { STATUS_DOT_CLASSES, STATUS_TEXT_CLASSES } from "@/components/applications/StatusBadge";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { formatDate } from "@/lib/format";
@@ -98,7 +99,13 @@ function KanbanPage() {
                   )}
                 >
                   <header className="mb-3 flex items-center justify-between px-1">
-                    <h2 className="text-sm font-semibold">{STATUS_LABELS[status]}</h2>
+                    <h2 className="flex items-center gap-2 text-sm font-semibold">
+                      <span
+                        aria-hidden
+                        className={cn("size-2 rounded-full", STATUS_DOT_CLASSES[status])}
+                      />
+                      <span className={STATUS_TEXT_CLASSES[status]}>{STATUS_LABELS[status]}</span>
+                    </h2>
                     <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                       {items.length}
                     </span>

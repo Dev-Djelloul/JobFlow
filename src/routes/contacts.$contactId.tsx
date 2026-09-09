@@ -248,7 +248,13 @@ function ContactDetailPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(followUp.date) || "—"} · {application.position} ·{" "}
-                      {isOverdue(followUp) ? "En retard" : FOLLOW_UP_STATUS_LABELS[followUp.status]}
+                      <span
+                        className={isOverdue(followUp) ? "font-medium text-destructive" : undefined}
+                      >
+                        {isOverdue(followUp)
+                          ? "En retard"
+                          : FOLLOW_UP_STATUS_LABELS[followUp.status]}
+                      </span>
                     </p>
                     {followUp.description ? (
                       <p className="mt-1 text-sm text-muted-foreground">{followUp.description}</p>

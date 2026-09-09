@@ -44,6 +44,12 @@ import { applyMerge, planMerge, type CompanyDuplicateSuggestion } from "@/lib/co
 import type { Contact } from "@/types/contact";
 import { cn } from "@/lib/utils";
 
+const SEVERITY_TEXT_CLASSES: Record<IssueSeverity, string> = {
+  critical: "text-destructive",
+  major: "text-warning-foreground dark:text-warning",
+  minor: "text-muted-foreground",
+};
+
 export const Route = createFileRoute("/data-quality")({
   head: () => ({
     meta: [
@@ -159,12 +165,19 @@ function DataQualityPage() {
               {ISSUE_SEVERITIES.map((s) => (
                 <Card key={s} className="rounded-xl shadow-none">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                    <CardTitle className={cn("text-sm font-medium", SEVERITY_TEXT_CLASSES[s])}>
                       {SEVERITY_LABELS[s]}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-semibold tabular-nums">{report.counts[s]}</p>
+                    <p
+                      className={cn(
+                        "text-2xl font-semibold tabular-nums",
+                        report.counts[s] > 0 && SEVERITY_TEXT_CLASSES[s],
+                      )}
+                    >
+                      {report.counts[s]}
+                    </p>
                     <p className="text-xs text-muted-foreground">anomalie(s)</p>
                   </CardContent>
                 </Card>

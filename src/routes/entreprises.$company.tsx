@@ -23,6 +23,7 @@ import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { buildCompanies, conversionRates, isOverdue } from "@/lib/companies";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { FOLLOW_UP_STATUS_LABELS } from "@/types/application";
 import { sourceLabel } from "@/types/application";
 
@@ -45,11 +46,27 @@ export const Route = createFileRoute("/entreprises/$company")({
   component: CompanyDetailPage,
 });
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "success" | "info";
+}) {
   return (
     <div className="rounded-lg border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-lg font-semibold">{value}</p>
+      <p
+        className={cn(
+          "text-lg font-semibold",
+          tone === "success" && "text-success",
+          tone === "info" && "text-info",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -121,13 +138,13 @@ function CompanyDetailPage() {
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Stat label="Candidatures" value={company.total} />
-            <Stat label="Entretiens" value={company.interviews} />
-            <Stat label="Offres" value={company.offers} />
+            <Stat label="Entretiens" value={company.interviews} tone="info" />
+            <Stat label="Offres" value={company.offers} tone="success" />
             {rates.toInterview !== null ? (
-              <Stat label="Candidature → entretien" value={`${rates.toInterview} %`} />
+              <Stat label="Candidature → entretien" value={`${rates.toInterview} %`} tone="info" />
             ) : null}
             {rates.toOffer !== null ? (
-              <Stat label="Entretien → offre" value={`${rates.toOffer} %`} />
+              <Stat label="Entretien → offre" value={`${rates.toOffer} %`} tone="success" />
             ) : null}
           </CardContent>
         </Card>

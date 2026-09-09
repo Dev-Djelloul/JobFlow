@@ -23,6 +23,7 @@ import { FollowUpForm } from "./FollowUpForm";
 import { EmailComposer } from "@/components/email/EmailComposer";
 import { suggestTemplateId } from "@/lib/email";
 import { useApplications } from "@/hooks/useApplications";
+import { isOverdue } from "@/lib/companies";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -80,10 +81,12 @@ export function FollowUpSection({ application }: { application: Application }) {
                 <span
                   className={cn(
                     "inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium",
-                    STATUS_CLASSES[f.status],
+                    isOverdue(f)
+                      ? "bg-destructive/10 text-destructive border-destructive/25"
+                      : STATUS_CLASSES[f.status],
                   )}
                 >
-                  {FOLLOW_UP_STATUS_LABELS[f.status]}
+                  {isOverdue(f) ? "En retard" : FOLLOW_UP_STATUS_LABELS[f.status]}
                 </span>
               </div>
 

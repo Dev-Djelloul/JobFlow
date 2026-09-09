@@ -42,7 +42,6 @@ const NAV = [
   { to: "/parametres", label: "Paramètres", icon: Settings },
 ] as const;
 
-
 function NavLinks({
   onNavigate,
   collapsed = false,
@@ -52,31 +51,31 @@ function NavLinks({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-      <nav className="flex flex-col gap-1">
-        {NAV.map(({ to, label, icon: Icon }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
-          const link = (
-            <Link
-              key={to}
-              to={to}
-              onClick={onNavigate}
-              aria-label={collapsed ? label : undefined}
-              title={collapsed ? label : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
-                collapsed ? "justify-center px-2" : "px-3",
-                active
-                  ? "bg-sidebar-primary/12 text-sidebar-primary"
-                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {collapsed ? null : label}
-            </Link>
-          );
-          return link;
-        })}
-      </nav>
+    <nav className="flex flex-col gap-1">
+      {NAV.map(({ to, label, icon: Icon }) => {
+        const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+        const link = (
+          <Link
+            key={to}
+            to={to}
+            onClick={onNavigate}
+            aria-label={collapsed ? label : undefined}
+            title={collapsed ? label : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
+              collapsed ? "justify-center px-2" : "px-3",
+              active
+                ? "bg-sidebar-primary/12 text-sidebar-primary"
+                : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            {collapsed ? null : label}
+          </Link>
+        );
+        return link;
+      })}
+    </nav>
   );
 }
 
@@ -169,7 +168,12 @@ export function AppLayout({
           <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden" aria-label="Ouvrir le menu">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="lg:hidden"
+                  aria-label="Ouvrir le menu"
+                >
                   <Menu className="size-4" />
                 </Button>
               </SheetTrigger>
@@ -194,9 +198,11 @@ export function AppLayout({
             </Sheet>
 
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-semibold sm:text-xl">{title}</h1>
+              <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
               {description ? (
-                <p className="hidden truncate text-sm text-muted-foreground sm:block">{description}</p>
+                <p className="hidden truncate text-sm text-muted-foreground sm:block">
+                  {description}
+                </p>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
@@ -208,7 +214,11 @@ export function AppLayout({
                 aria-label={collapsed ? "Déplier le menu" : "Replier le menu"}
                 onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
               >
-                {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+                {collapsed ? (
+                  <PanelLeftOpen className="size-4" />
+                ) : (
+                  <PanelLeftClose className="size-4" />
+                )}
               </Button>
               <ThemeToggle />
               {actions}
