@@ -176,7 +176,7 @@ export function ApplicationDetail({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl gap-5">
           {navigationList && navigationList.length > 1 ? (
             <div className="absolute left-4 top-4 flex items-center gap-0.5 rounded-full border border-border bg-background/80 p-0.5 backdrop-blur">
               <button
@@ -207,7 +207,7 @@ export function ApplicationDetail({
           <DialogHeader
             className={navigationList && navigationList.length > 1 ? "mt-5" : undefined}
           >
-            <DialogTitle className="flex items-center gap-2 pr-6">
+            <DialogTitle className="flex items-center gap-2 pr-10">
               {application.position}
               <button
                 type="button"
