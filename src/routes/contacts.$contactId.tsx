@@ -329,6 +329,7 @@ function ContactDetailPage() {
         onDelete={dialogs.remove}
         onStatusChange={dialogs.setStatus}
         onToggleFavorite={dialogs.toggleFavorite}
+        onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
       />
     </AppLayout>
   );

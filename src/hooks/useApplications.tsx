@@ -56,18 +56,36 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
         applications.map((a) => {
           if (a.id !== id) return a;
           const statusChanged = input.status && input.status !== a.status;
+          const today = new Date().toISOString().slice(0, 10);
+          const lastEntry = a.status_history[a.status_history.length - 1];
+          // Plusieurs changements de statut le même jour (essais, corrections) remplacent la
+          // dernière entrée au lieu de s'empiler — l'historique reste lisible, une entrée par
+          // jour où le statut a réellement bougé.
+          const sameDayAsLast = lastEntry?.date === today;
           return {
             ...a,
             ...input,
             status_history: statusChanged
-              ? [
-                  ...a.status_history,
-                  { status: input.status!, date: new Date().toISOString().slice(0, 10) },
-                ]
+              ? sameDayAsLast
+                ? [...a.status_history.slice(0, -1), { status: input.status!, date: today }]
+                : [...a.status_history, { status: input.status!, date: today }]
               : a.status_history,
             updated_at: new Date().toISOString(),
           };
         }),
+      );
+    },
+    [applications, persist],
+  );
+
+  const removeStatusHistoryEntry = useCallback(
+    (id: string, index: number) => {
+      persist(
+        applications.map((a) =>
+          a.id === id
+            ? { ...a, status_history: a.status_history.filter((_, i) => i !== index) }
+            : a,
+        ),
       );
     },
     [applications, persist],
@@ -167,6 +185,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       deleteApplication,
       changeStatus,
       toggleFavorite,
+      removeStatusHistoryEntry,
       addFollowUp,
       updateFollowUp,
       deleteFollowUp,
@@ -183,6 +202,7 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
       deleteApplication,
       changeStatus,
       toggleFavorite,
+      removeStatusHistoryEntry,
       addFollowUp,
       updateFollowUp,
       deleteFollowUp,

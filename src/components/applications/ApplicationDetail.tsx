@@ -95,6 +95,7 @@ interface Props {
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: ApplicationStatus) => void;
   onToggleFavorite: (id: string) => void;
+  onRemoveStatusHistoryEntry: (id: string, index: number) => void;
 }
 
 export function ApplicationDetail({
@@ -105,6 +106,7 @@ export function ApplicationDetail({
   onDelete,
   onStatusChange,
   onToggleFavorite,
+  onRemoveStatusHistoryEntry,
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -253,12 +255,25 @@ export function ApplicationDetail({
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Historique des statuts
             </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Plusieurs changements le même jour remplacent désormais l'entrée du jour au lieu de
+              s'empiler. Vous pouvez supprimer une ligne existante si l'historique en garde trop.
+            </p>
             <ol className="mt-2 space-y-2">
               {application.status_history.map((entry, i) => (
                 <li key={`${entry.status}-${i}`} className="flex items-center gap-3 text-sm">
                   <span className="size-1.5 rounded-full bg-primary" />
                   <StatusBadge status={entry.status} />
                   <span className="text-muted-foreground">{formatDate(entry.date)}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveStatusHistoryEntry(application.id, i)}
+                    aria-label="Supprimer cette entrée de l'historique"
+                    title="Supprimer cette entrée de l'historique"
+                    className="ml-auto text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </li>
               ))}
             </ol>

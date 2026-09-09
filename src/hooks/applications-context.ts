@@ -14,6 +14,7 @@ export interface ApplicationsContextValue {
   deleteApplication: (id: string) => void;
   changeStatus: (id: string, status: ApplicationStatus) => void;
   toggleFavorite: (id: string) => void;
+  removeStatusHistoryEntry: (id: string, index: number) => void;
   addFollowUp: (applicationId: string, input: FollowUpInput) => void;
   updateFollowUp: (
     applicationId: string,

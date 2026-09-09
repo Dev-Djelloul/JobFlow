@@ -11,6 +11,7 @@ export function useApplicationDialogs() {
     deleteApplication,
     changeStatus,
     toggleFavorite,
+    removeStatusHistoryEntry,
     applications,
   } = useApplications();
   const [formOpen, setFormOpen] = useState(false);
@@ -87,5 +88,6 @@ export function useApplicationDialogs() {
     remove,
     setStatus,
     toggleFavorite,
+    removeStatusHistoryEntry,
   };
 }
