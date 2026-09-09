@@ -18,7 +18,7 @@ export interface JobOffer {
   experienceLibelle: string;
   /** Code d'exigence France Travail (D/S/E) ; vide pour les sources qui ne le fournissent pas. */
   experienceExige: string;
-  source: "france_travail" | "adzuna" | "jooble";
+  source: "france_travail" | "adzuna";
 }
 
 export interface JobOfferSearchResult {

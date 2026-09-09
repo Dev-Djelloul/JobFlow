@@ -20,7 +20,6 @@ import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
 import { searchAdzunaOffers } from "@/lib/adzuna";
 import { searchFranceTravailOffers } from "@/lib/france-travail";
-import { searchJoobleOffers } from "@/lib/jooble";
 import type { JobOffer } from "@/lib/job-offers";
 import { departmentName } from "@/lib/french-departments";
 import { formatDate } from "@/lib/format";
@@ -34,19 +33,18 @@ export const Route = createFileRoute("/offres")({
       {
         name: "description",
         content:
-          "Recherchez des offres d'emploi (France Travail, Adzuna, Jooble) et ajoutez-les à vos candidatures.",
+          "Recherchez des offres d'emploi (France Travail, Adzuna) et ajoutez-les à vos candidatures.",
       },
     ],
   }),
   component: OffresPage,
 });
 
-type OfferSource = Extract<ApplicationSource, "france_travail" | "adzuna" | "jooble">;
+type OfferSource = Extract<ApplicationSource, "france_travail" | "adzuna">;
 
 const SOURCE_OPTIONS: { value: OfferSource; label: string }[] = [
   { value: "france_travail", label: "France Travail" },
   { value: "adzuna", label: "Adzuna" },
-  { value: "jooble", label: "Jooble" },
 ];
 
 // Les deux API ont des codes de contrat différents (France Travail : CDI/CDD/MIS/LIB/SAI ;
@@ -93,7 +91,6 @@ const CONTRACT_TYPE_OPTIONS: { value: ContractFilter; label: string }[] = [
 const PAGE_SIZE_OPTIONS_BY_SOURCE: Record<OfferSource, readonly number[]> = {
   france_travail: [20, 50, 100, 150],
   adzuna: [20, 50],
-  jooble: [20, 50, 100],
 };
 
 const SAVED_SEARCH_KEY = "jobflow.offres.savedSearch.v1";
@@ -224,23 +221,14 @@ function OffresPage() {
                 ...(location.trim() ? { departement: location.trim() } : {}),
               },
             })
-          : source === "adzuna"
-            ? await searchAdzunaOffers({
-                data: {
-                  motsCles,
-                  page: targetPage,
-                  pageSize,
-                  ...(location.trim() ? { lieu: location.trim() } : {}),
-                },
-              })
-            : await searchJoobleOffers({
-                data: {
-                  motsCles,
-                  page: targetPage,
-                  pageSize,
-                  ...(location.trim() ? { lieu: location.trim() } : {}),
-                },
-              });
+          : await searchAdzunaOffers({
+              data: {
+                motsCles,
+                page: targetPage,
+                pageSize,
+                ...(location.trim() ? { lieu: location.trim() } : {}),
+              },
+            });
       if (!result.ok) {
         setError(result.error ?? "La recherche a échoué.");
         if (isFirstPage) setOffers([]);
