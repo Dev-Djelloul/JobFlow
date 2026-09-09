@@ -76,10 +76,18 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   application?: Application | null;
+  /** Préremplit un nouveau formulaire (ex. depuis une offre importée), sans passer en mode édition. */
+  initialValues?: Partial<ApplicationInput> | undefined;
   onSubmit: (values: ApplicationInput) => void;
 }
 
-export function ApplicationForm({ open, onOpenChange, application, onSubmit }: Props) {
+export function ApplicationForm({
+  open,
+  onOpenChange,
+  application,
+  initialValues,
+  onSubmit,
+}: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: emptyValues(),
@@ -107,9 +115,9 @@ export function ApplicationForm({ open, onOpenChange, application, onSubmit }: P
             next_action: application.next_action,
             follow_up_date: application.follow_up_date,
           }
-        : emptyValues(),
+        : { ...emptyValues(), ...initialValues },
     );
-  }, [open, application, reset]);
+  }, [open, application, initialValues, reset]);
 
   const errors = formState.errors;
 

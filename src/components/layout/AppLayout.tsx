@@ -16,6 +16,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const NAV = [
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
+  { to: "/offres", label: "Offres", icon: Search },
   { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/actions", label: "Actions", icon: ListTodo },
   { to: "/intelligence", label: "À votre attention", icon: Sparkles },

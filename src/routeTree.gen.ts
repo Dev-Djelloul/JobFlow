@@ -17,6 +17,7 @@ import { Route as DataQualityRouteImport } from './routes/data-quality'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as KanbanRouteImport } from './routes/kanban'
+import { Route as OffresRouteImport } from './routes/offres'
 import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as ContactsIndexRouteImport } from './routes/contacts.index'
 import { Route as ContactsContactIdRouteImport } from './routes/contacts.$contactId'
@@ -63,6 +64,11 @@ const KanbanRoute = KanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OffresRoute = OffresRouteImport.update({
+  id: '/offres',
+  path: '/offres',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParametresRoute = ParametresRouteImport.update({
   id: '/parametres',
   path: '/parametres',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
   '/entreprises/$company': typeof EntreprisesCompanyRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
   '/entreprises/$company': typeof EntreprisesCompanyRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
   '/entreprises/$company': typeof EntreprisesCompanyRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
     | '/entreprises/$company'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
     | '/entreprises/$company'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
     | '/entreprises/$company'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   EmailsRoute: typeof EmailsRoute
   IntelligenceRoute: typeof IntelligenceRoute
   KanbanRoute: typeof KanbanRoute
+  OffresRoute: typeof OffresRoute
   ParametresRoute: typeof ParametresRoute
   ContactsContactIdRoute: typeof ContactsContactIdRoute
   EntreprisesCompanyRoute: typeof EntreprisesCompanyRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KanbanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/offres': {
+      id: '/offres'
+      path: '/offres'
+      fullPath: '/offres'
+      preLoaderRoute: typeof OffresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parametres': {
       id: '/parametres'
       path: '/parametres'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailsRoute: EmailsRoute,
   IntelligenceRoute: IntelligenceRoute,
   KanbanRoute: KanbanRoute,
+  OffresRoute: OffresRoute,
   ParametresRoute: ParametresRoute,
   ContactsContactIdRoute: ContactsContactIdRoute,
   EntreprisesCompanyRoute: EntreprisesCompanyRoute,
