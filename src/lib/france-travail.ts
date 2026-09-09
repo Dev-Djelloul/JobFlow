@@ -1,27 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { JobOffer, JobOfferSearchResult } from "./job-offers";
 
 const TOKEN_URL =
   "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire";
 const SEARCH_URL = "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search";
-
-/** Sous-ensemble des champs utiles d'une offre France Travail — le reste est ignoré. */
-export interface FranceTravailOffer {
-  id: string;
-  intitule: string;
-  description: string;
-  dateCreation: string;
-  entreprise: string;
-  lieu: string;
-  typeContrat: string;
-  typeContratLibelle: string;
-  salaire: string;
-  url: string;
-  /** Libellé lisible du niveau d'expérience demandé (ex. "Débutant accepté", "Expérience exigée de 2 ans"). */
-  experienceLibelle: string;
-  /** Code d'exigence France Travail : D = débutant accepté, S = souhaitée, E = exigée. */
-  experienceExige: string;
-}
 
 interface RawFtOffer {
   id: string;
@@ -74,7 +57,7 @@ async function getAccessToken(): Promise<string> {
   return json.access_token;
 }
 
-function mapOffer(raw: RawFtOffer): FranceTravailOffer {
+function mapOffer(raw: RawFtOffer): JobOffer {
   return {
     id: raw.id,
     intitule: raw.intitule ?? "",
@@ -88,6 +71,7 @@ function mapOffer(raw: RawFtOffer): FranceTravailOffer {
     url: raw.origineOffre?.urlOrigine ?? "",
     experienceLibelle: raw.experienceLibelle ?? "",
     experienceExige: raw.experienceExige ?? "",
+    source: "france_travail",
   };
 }
 
@@ -96,15 +80,6 @@ function mapOffer(raw: RawFtOffer): FranceTravailOffer {
  * d'API ne doivent jamais atteindre le navigateur, et l'API ne permet pas les appels CORS
  * directs depuis un site tiers.
  */
-export interface FranceTravailSearchResult {
-  ok: boolean;
-  offers: FranceTravailOffer[];
-  /** Nombre total de résultats côté France Travail, pour savoir s'il reste des pages à charger. */
-  total?: number;
-  /** Détail de l'erreur, affiché tel quel côté client pour faciliter le diagnostic. */
-  error?: string;
-}
-
 // L'API France Travail limite chaque appel à 150 offres maximum (span de "range").
 const MAX_PAGE_SIZE = 150;
 
@@ -120,7 +95,7 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
       page: z.number().int().min(0).max(50).default(0),
     }),
   )
-  .handler(async ({ data }): Promise<FranceTravailSearchResult> => {
+  .handler(async ({ data }): Promise<JobOfferSearchResult> => {
     try {
       const token = await getAccessToken();
       const url = new URL(SEARCH_URL);

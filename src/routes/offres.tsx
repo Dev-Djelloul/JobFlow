@@ -18,28 +18,40 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
-import { searchFranceTravailOffers, type FranceTravailOffer } from "@/lib/france-travail";
+import { searchAdzunaOffers } from "@/lib/adzuna";
+import { searchFranceTravailOffers } from "@/lib/france-travail";
+import type { JobOffer } from "@/lib/job-offers";
 import { departmentName } from "@/lib/french-departments";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { ApplicationInput, ContractType } from "@/types/application";
+import type { ApplicationInput, ApplicationSource, ContractType } from "@/types/application";
 
 export const Route = createFileRoute("/offres")({
   head: () => ({
     meta: [
-      { title: "Offres France Travail — JobFlow" },
+      { title: "Offres d'emploi — JobFlow" },
       {
         name: "description",
-        content: "Recherchez des offres d'emploi France Travail et ajoutez-les à vos candidatures.",
+        content:
+          "Recherchez des offres d'emploi (France Travail, Adzuna) et ajoutez-les à vos candidatures.",
       },
     ],
   }),
   component: OffresPage,
 });
 
-// L'API renvoie un code (typeContrat) mais les stages/alternances n'y sont pas toujours
-// distingués de façon fiable : on complète donc par une lecture du libellé texte de l'offre.
-function mapContractType(offer: FranceTravailOffer): ContractType {
+type OfferSource = Extract<ApplicationSource, "france_travail" | "adzuna">;
+
+const SOURCE_OPTIONS: { value: OfferSource; label: string }[] = [
+  { value: "france_travail", label: "France Travail" },
+  { value: "adzuna", label: "Adzuna" },
+];
+
+// Les deux API ont des codes de contrat différents (France Travail : CDI/CDD/MIS/LIB/SAI ;
+// Adzuna : permanent/contract) ; les stages/alternances n'y sont pas toujours distingués
+// de façon fiable non plus. On normalise donc tout vers nos propres ContractType, en
+// complétant par le libellé texte de l'offre quand le code seul ne suffit pas.
+function mapContractType(offer: JobOffer): ContractType {
   const libelle = offer.typeContratLibelle.toLowerCase();
   if (libelle.includes("stage")) return "Stage";
   if (
@@ -55,39 +67,38 @@ function mapContractType(offer: FranceTravailOffer): ContractType {
     TTI: "Intérim",
     LIB: "Freelance",
     SAI: "CDD",
+    permanent: "CDI",
+    contract: "CDD",
   };
   return byCode[offer.typeContrat] ?? "CDI";
 }
 
-// Filtre client-side : ces deux catégories ne correspondent pas à un code fiable et unique
-// côté API "typeContrat", on les applique donc après réception des résultats.
-type ContractFilter = "" | "CDI" | "CDD" | "MIS" | "LIB" | "SAI" | "STAGE" | "ALTERNANCE";
+type ContractFilter = "" | ContractType;
 
 const CONTRACT_TYPE_OPTIONS: { value: ContractFilter; label: string }[] = [
   { value: "", label: "Tous les contrats" },
   { value: "CDI", label: "CDI" },
   { value: "CDD", label: "CDD" },
-  { value: "MIS", label: "Intérim" },
-  { value: "LIB", label: "Freelance / libéral" },
-  { value: "SAI", label: "Saisonnier" },
-  { value: "STAGE", label: "Stage" },
-  { value: "ALTERNANCE", label: "Alternance" },
+  { value: "Intérim", label: "Intérim" },
+  { value: "Freelance", label: "Freelance / libéral" },
+  { value: "Stage", label: "Stage" },
+  { value: "Alternance", label: "Alternance" },
 ];
 
-// Codes reconnus tels quels par le paramètre "typeContrat" de l'API ; Stage/Alternance sont
-// filtrés côté client (voir mapContractType) car non fiablement identifiables par un code seul.
-const API_CONTRACT_CODES = new Set(["CDI", "CDD", "MIS", "LIB", "SAI"]);
-
-const PAGE_SIZE_OPTIONS = [20, 50, 100, 150] as const;
+const PAGE_SIZE_OPTIONS_BY_SOURCE: Record<OfferSource, readonly number[]> = {
+  france_travail: [20, 50, 100, 150],
+  adzuna: [20, 50],
+};
 
 const SAVED_SEARCH_KEY = "jobflow.offres.savedSearch.v1";
 const FAVORITE_OFFERS_KEY = "jobflow.offres.favorites.v1";
 
 interface SavedSearch {
   motsCles: string;
-  departement: string;
+  location: string;
   typeContrat: ContractFilter;
   pageSize: number;
+  source: OfferSource;
 }
 
 function loadSavedSearch(): SavedSearch | null {
@@ -110,9 +121,9 @@ function loadFavoriteOfferIds(): Set<string> {
   }
 }
 
-// L'API France Travail v2 n'a pas de paramètre dédié au télétravail : on filtre côté client
-// sur la présence du mot "télétravail" dans l'intitulé/la description des offres déjà chargées.
-function looksRemote(offer: FranceTravailOffer): boolean {
+// Ni France Travail ni Adzuna n'ont de paramètre dédié au télétravail dans leur recherche
+// standard : on filtre côté client sur la présence du mot dans l'intitulé/la description.
+function looksRemote(offer: JobOffer): boolean {
   const haystack = `${offer.intitule} ${offer.description}`.toLowerCase();
   return (
     haystack.includes("télétravail") ||
@@ -131,7 +142,8 @@ function experienceBadgeClasses(exige: string): string {
 }
 
 // Correspondance approximative entre le code d'exigence France Travail et nos niveaux
-// structurés — sert uniquement de valeur de départ, modifiable dans le formulaire.
+// structurés — sert uniquement de valeur de départ, modifiable dans le formulaire. Adzuna ne
+// fournit pas cette information : experienceExige y est toujours vide, donc sans effet ici.
 function mapExperienceLevel(exige: string): string {
   if (exige === "D") return "debutant";
   if (exige === "S") return "junior";
@@ -139,19 +151,11 @@ function mapExperienceLevel(exige: string): string {
   return "";
 }
 
-function matchesContractFilter(offer: FranceTravailOffer, filter: ContractFilter): boolean {
-  if (!filter) return true;
-  if (filter === "STAGE" || filter === "ALTERNANCE") {
-    const mapped = mapContractType(offer);
-    return filter === "STAGE" ? mapped === "Stage" : mapped === "Alternance";
-  }
-  return offer.typeContrat === filter;
-}
-
 function OffresPage() {
   const { applications, createApplication } = useApplications();
+  const [source, setSource] = useState<OfferSource>("france_travail");
   const [query, setQuery] = useState("");
-  const [departement, setDepartement] = useState("");
+  const [location, setLocation] = useState("");
   const [typeContrat, setTypeContrat] = useState<ContractFilter>("");
   const [pageSize, setPageSize] = useState<number>(20);
   const [remoteOnly, setRemoteOnly] = useState(false);
@@ -161,7 +165,7 @@ function OffresPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [offers, setOffers] = useState<FranceTravailOffer[]>([]);
+  const [offers, setOffers] = useState<JobOffer[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -172,9 +176,10 @@ function OffresPage() {
     const saved = loadSavedSearch();
     if (saved) {
       setQuery(saved.motsCles);
-      setDepartement(saved.departement);
+      setLocation(saved.location);
       setTypeContrat(saved.typeContrat);
       if (saved.pageSize) setPageSize(saved.pageSize);
+      if (saved.source) setSource(saved.source);
     }
     setFavoriteIds(loadFavoriteOfferIds());
   }, []);
@@ -203,15 +208,24 @@ function OffresPage() {
     else setLoadingMore(true);
     setError(null);
     try {
-      const result = await searchFranceTravailOffers({
-        data: {
-          motsCles,
-          page: targetPage,
-          pageSize,
-          ...(departement.trim() ? { departement: departement.trim() } : {}),
-          ...(API_CONTRACT_CODES.has(typeContrat) ? { typeContrat } : {}),
-        },
-      });
+      const result =
+        source === "france_travail"
+          ? await searchFranceTravailOffers({
+              data: {
+                motsCles,
+                page: targetPage,
+                pageSize,
+                ...(location.trim() ? { departement: location.trim() } : {}),
+              },
+            })
+          : await searchAdzunaOffers({
+              data: {
+                motsCles,
+                page: targetPage,
+                pageSize,
+                ...(location.trim() ? { lieu: location.trim() } : {}),
+              },
+            });
       if (!result.ok) {
         setError(result.error ?? "La recherche a échoué.");
         if (isFirstPage) setOffers([]);
@@ -234,26 +248,34 @@ function OffresPage() {
     void runSearch(0);
   };
 
+  const handleSourceChange = (next: OfferSource) => {
+    setSource(next);
+    const maxSize = PAGE_SIZE_OPTIONS_BY_SOURCE[next][
+      PAGE_SIZE_OPTIONS_BY_SOURCE[next].length - 1
+    ] as number;
+    if (pageSize > maxSize) setPageSize(PAGE_SIZE_OPTIONS_BY_SOURCE[next][0] as number);
+  };
+
   const handleSaveSearch = () => {
     const motsCles = query.trim();
     if (!motsCles) {
       toast.error("Renseignez des mots-clés avant d'enregistrer la recherche.");
       return;
     }
-    const saved: SavedSearch = { motsCles, departement, typeContrat, pageSize };
+    const saved: SavedSearch = { motsCles, location, typeContrat, pageSize, source };
     window.localStorage.setItem(SAVED_SEARCH_KEY, JSON.stringify(saved));
     toast.success("Recherche enregistrée — elle sera proposée à chaque visite.");
   };
 
   const visibleOffers = offers
-    .filter((o) => matchesContractFilter(o, typeContrat))
+    .filter((o) => (typeContrat ? mapContractType(o) === typeContrat : true))
     .filter((o) => (remoteOnly ? looksRemote(o) : true))
     .filter((o) => (beginnerOnly ? o.experienceExige === "D" : true))
     .filter((o) => (favoritesOnly ? favoriteIds.has(o.id) : true));
 
   // Regroupe les offres par région/département (préfixe du champ "lieu", ex. "75 - Paris") pour
   // rendre visible la répartition géographique — l'API ne renvoie pas de résultats triés par zone.
-  const groupedOffers = visibleOffers.reduce<{ zone: string; items: FranceTravailOffer[] }[]>(
+  const groupedOffers = visibleOffers.reduce<{ zone: string; items: JobOffer[] }[]>(
     (groups, offer) => {
       const zone = offer.lieu.split(" - ")[0]?.trim() || "Non précisé";
       const group = groups.find((g) => g.zone === zone);
@@ -265,10 +287,10 @@ function OffresPage() {
   );
   groupedOffers.sort((a, b) => a.zone.localeCompare(b.zone, "fr", { numeric: true }));
 
-  const handleAdd = (offer: FranceTravailOffer) => {
+  const handleAdd = (offer: JobOffer) => {
     setPrefill({
-      // Certaines offres France Travail masquent le nom de l'entreprise ("recruteur anonyme") :
-      // le champ étant obligatoire dans le formulaire, une valeur vide bloquait silencieusement
+      // Certaines offres masquent le nom de l'entreprise ("recruteur anonyme") : le champ
+      // étant obligatoire dans le formulaire, une valeur vide bloquait silencieusement
       // l'ajout de la candidature (aucun message visible, le dialogue restait simplement ouvert).
       company: offer.entreprise || "Entreprise non communiquée",
       position: offer.intitule,
@@ -276,7 +298,7 @@ function OffresPage() {
       contract_type: mapContractType(offer),
       salary: offer.salaire,
       job_url: offer.url,
-      source: "france_travail",
+      source: offer.source,
       source_url: offer.url,
       application_date: new Date().toISOString().slice(0, 10),
       status: "to_target",
@@ -288,13 +310,34 @@ function OffresPage() {
   };
 
   const canLoadMore = total !== null && offers.length < total;
+  const pageSizeOptions = PAGE_SIZE_OPTIONS_BY_SOURCE[source];
+  const locationPlaceholder =
+    source === "france_travail" ? "Département (ex : 75)" : "Ville ou code postal (ex : Paris)";
 
   return (
     <AppLayout
-      title="Offres France Travail"
-      description="Recherchez des offres et ajoutez-les directement à vos candidatures."
+      title="Offres d'emploi"
+      description="Recherchez des offres (France Travail, Adzuna) et ajoutez-les directement à vos candidatures."
     >
       <div className="space-y-4">
+        <div className="flex w-fit rounded-lg border border-input bg-muted/50 p-0.5">
+          {SOURCE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handleSourceChange(opt.value)}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                source === opt.value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -307,13 +350,11 @@ function OffresPage() {
             />
           </div>
           <Input
-            value={departement}
-            onChange={(e) => setDepartement(e.target.value)}
-            placeholder="Département (ex : 75)"
-            className="sm:w-44"
-            aria-label="Département"
-            inputMode="numeric"
-            maxLength={3}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder={locationPlaceholder}
+            className="sm:w-52"
+            aria-label="Lieu"
           />
           <select
             value={typeContrat}
@@ -334,7 +375,7 @@ function OffresPage() {
             title="Nombre d'offres par page"
             className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs sm:w-40"
           >
-            {PAGE_SIZE_OPTIONS.map((size) => (
+            {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
                 {size} offres / page
               </option>
@@ -392,7 +433,7 @@ function OffresPage() {
         {!searched && !loading ? (
           <EmptyState
             title="Rechercher des offres"
-            description="Tapez un métier, un intitulé ou une entreprise pour voir les offres disponibles sur France Travail."
+            description="Tapez un métier, un intitulé ou une entreprise pour voir les offres disponibles."
           />
         ) : null}
 
@@ -424,7 +465,10 @@ function OffresPage() {
                   const alreadyAdded = offer.url ? existingUrls.has(offer.url) : false;
                   const isFavorite = favoriteIds.has(offer.id);
                   return (
-                    <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
+                    <Card
+                      key={`${offer.source}-${offer.id}`}
+                      className="gap-2 rounded-lg p-4 shadow-none"
+                    >
                       <CardContent className="space-y-2 p-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium leading-snug">{offer.intitule}</p>
