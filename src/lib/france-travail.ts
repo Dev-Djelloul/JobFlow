@@ -96,12 +96,20 @@ export interface FranceTravailSearchResult {
 }
 
 export const searchFranceTravailOffers = createServerFn({ method: "GET" })
-  .validator(z.object({ motsCles: z.string().trim().min(1).max(200) }))
+  .validator(
+    z.object({
+      motsCles: z.string().trim().min(1).max(200),
+      departement: z.string().trim().max(3).optional(),
+      typeContrat: z.string().trim().max(10).optional(),
+    }),
+  )
   .handler(async ({ data }): Promise<FranceTravailSearchResult> => {
     try {
       const token = await getAccessToken();
       const url = new URL(SEARCH_URL);
       url.searchParams.set("motsCles", data.motsCles);
+      if (data.departement) url.searchParams.set("departement", data.departement);
+      if (data.typeContrat) url.searchParams.set("typeContrat", data.typeContrat);
       url.searchParams.set("range", "0-19");
       url.searchParams.set("sort", "1"); // tri par date de création décroissante
 

@@ -39,9 +39,20 @@ function mapContractType(code: string): ContractType {
   return CONTRACT_TYPE_MAP[code] ?? "CDI";
 }
 
+const CONTRACT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Tous les contrats" },
+  { value: "CDI", label: "CDI" },
+  { value: "CDD", label: "CDD" },
+  { value: "MIS", label: "Intérim" },
+  { value: "LIB", label: "Freelance / libéral" },
+  { value: "SAI", label: "Saisonnier" },
+];
+
 function OffresPage() {
   const { createApplication } = useApplications();
   const [query, setQuery] = useState("");
+  const [departement, setDepartement] = useState("");
+  const [typeContrat, setTypeContrat] = useState("");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [offers, setOffers] = useState<FranceTravailOffer[]>([]);
@@ -56,7 +67,13 @@ function OffresPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await searchFranceTravailOffers({ data: { motsCles } });
+      const result = await searchFranceTravailOffers({
+        data: {
+          motsCles,
+          ...(departement.trim() ? { departement: departement.trim() } : {}),
+          ...(typeContrat ? { typeContrat } : {}),
+        },
+      });
       if (!result.ok) {
         setError(result.error ?? "La recherche a échoué.");
         setOffers([]);
@@ -70,6 +87,20 @@ function OffresPage() {
       setLoading(false);
     }
   };
+
+  // Regroupe les offres par région/département (préfixe du champ "lieu", ex. "75 - Paris") pour
+  // rendre visible la répartition géographique — l'API ne renvoie pas de résultats triés par zone.
+  const groupedOffers = offers.reduce<{ zone: string; items: FranceTravailOffer[] }[]>(
+    (groups, offer) => {
+      const zone = offer.lieu.split(" - ")[0]?.trim() || "Non précisé";
+      const group = groups.find((g) => g.zone === zone);
+      if (group) group.items.push(offer);
+      else groups.push({ zone, items: [offer] });
+      return groups;
+    },
+    [],
+  );
+  groupedOffers.sort((a, b) => a.zone.localeCompare(b.zone, "fr", { numeric: true }));
 
   const handleAdd = (offer: FranceTravailOffer) => {
     setPrefill({
@@ -100,11 +131,32 @@ function OffresPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Mots-clés (ex : chef de projet digital Paris)"
+              placeholder="Mots-clés (ex : chef de projet digital)"
               className="pl-9"
               aria-label="Mots-clés de recherche"
             />
           </div>
+          <Input
+            value={departement}
+            onChange={(e) => setDepartement(e.target.value)}
+            placeholder="Département (ex : 75)"
+            className="sm:w-44"
+            aria-label="Département"
+            inputMode="numeric"
+            maxLength={3}
+          />
+          <select
+            value={typeContrat}
+            onChange={(e) => setTypeContrat(e.target.value)}
+            aria-label="Type de contrat"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs sm:w-48"
+          >
+            {CONTRACT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           <Button type="submit" disabled={loading || !query.trim()}>
             {loading ? "Recherche…" : "Rechercher"}
           </Button>
@@ -130,46 +182,61 @@ function OffresPage() {
           />
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {offers.map((offer) => (
-            <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
-              <CardContent className="space-y-2 p-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium leading-snug">{offer.intitule}</p>
-                  {offer.url ? (
-                    <a
-                      href={offer.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 text-muted-foreground hover:text-primary"
-                      title="Voir l'offre originale"
-                    >
-                      <ExternalLink className="size-4" />
-                    </a>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                  {offer.entreprise ? (
-                    <span className="flex items-center gap-1">
-                      <Building2 className="size-3.5" /> {offer.entreprise}
-                    </span>
-                  ) : null}
-                  {offer.lieu ? (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="size-3.5" /> {offer.lieu}
-                    </span>
-                  ) : null}
-                  <span>{offer.typeContratLibelle || offer.typeContrat}</span>
-                  {offer.dateCreation ? <span>{formatDate(offer.dateCreation)}</span> : null}
-                </div>
-                {offer.description ? (
-                  <p className="line-clamp-3 text-sm text-muted-foreground">{offer.description}</p>
-                ) : null}
-                <Button size="sm" variant="outline" onClick={() => handleAdd(offer)}>
-                  <Plus className="size-4" /> Ajouter comme candidature
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="space-y-6">
+          {groupedOffers.map((group) => (
+            <div key={group.zone} className="space-y-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <MapPin className="size-4" />
+                {group.zone}
+                <span className="font-normal">
+                  ({group.items.length} offre{group.items.length > 1 ? "s" : ""})
+                </span>
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {group.items.map((offer) => (
+                  <Card key={offer.id} className="gap-2 rounded-lg p-4 shadow-none">
+                    <CardContent className="space-y-2 p-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium leading-snug">{offer.intitule}</p>
+                        {offer.url ? (
+                          <a
+                            href={offer.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="shrink-0 text-muted-foreground hover:text-primary"
+                            title="Voir l'offre originale"
+                          >
+                            <ExternalLink className="size-4" />
+                          </a>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        {offer.entreprise ? (
+                          <span className="flex items-center gap-1">
+                            <Building2 className="size-3.5" /> {offer.entreprise}
+                          </span>
+                        ) : null}
+                        {offer.lieu ? (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="size-3.5" /> {offer.lieu}
+                          </span>
+                        ) : null}
+                        <span>{offer.typeContratLibelle || offer.typeContrat}</span>
+                        {offer.dateCreation ? <span>{formatDate(offer.dateCreation)}</span> : null}
+                      </div>
+                      {offer.description ? (
+                        <p className="line-clamp-3 text-sm text-muted-foreground">
+                          {offer.description}
+                        </p>
+                      ) : null}
+                      <Button size="sm" variant="outline" onClick={() => handleAdd(offer)}>
+                        <Plus className="size-4" /> Ajouter comme candidature
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
