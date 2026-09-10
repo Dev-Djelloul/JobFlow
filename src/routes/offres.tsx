@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Bell,
+  BellPlus,
   Building2,
   CheckCircle2,
   ExternalLink,
   MapPin,
   Plus,
-  Save,
   Search,
   Star,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -20,11 +22,19 @@ import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
 import { searchAdzunaOffers } from "@/lib/adzuna";
 import { searchFranceTravailOffers } from "@/lib/france-travail";
-import type { JobOffer } from "@/lib/job-offers";
+import { looksRemote, mapContractType, type JobOffer, type OfferSource } from "@/lib/job-offers";
+import {
+  createAlert,
+  loadAlerts,
+  markAlertSeen,
+  refreshAllAlerts,
+  saveAlerts,
+  type JobAlert,
+} from "@/lib/job-alerts";
 import { departmentName } from "@/lib/french-departments";
-import { formatDate } from "@/lib/format";
+import { formatDate, relativeDateLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { ApplicationInput, ApplicationSource, ContractType } from "@/types/application";
+import type { ApplicationInput, ContractType } from "@/types/application";
 
 export const Route = createFileRoute("/offres")({
   head: () => ({
@@ -40,41 +50,10 @@ export const Route = createFileRoute("/offres")({
   component: OffresPage,
 });
 
-type OfferSource = Extract<ApplicationSource, "france_travail" | "adzuna">;
-
 const SOURCE_OPTIONS: { value: OfferSource; label: string }[] = [
   { value: "france_travail", label: "France Travail" },
   { value: "adzuna", label: "Adzuna" },
 ];
-
-// Les deux API ont des codes de contrat différents (France Travail : CDI/CDD/MIS/LIB/SAI ;
-// Adzuna : permanent/contract) ; les stages/alternances n'y sont pas toujours distingués
-// de façon fiable non plus. On normalise donc tout vers nos propres ContractType, en
-// complétant par le libellé texte de l'offre quand le code seul ne suffit pas.
-function mapContractType(offer: JobOffer): ContractType {
-  // Le libellé de contrat d'Adzuna est reconstruit à partir de codes génériques
-  // ("CDI"/"CDD") sans jamais mentionner stage/alternance, même quand l'offre en est une
-  // (l'info n'apparaît alors que dans le titre) : on regarde donc aussi l'intitulé complet.
-  const haystack = `${offer.typeContratLibelle} ${offer.intitule}`.toLowerCase();
-  if (haystack.includes("stage")) return "Stage";
-  if (
-    haystack.includes("alternance") ||
-    haystack.includes("apprentissage") ||
-    haystack.includes("professionnalisation")
-  )
-    return "Alternance";
-  const byCode: Record<string, ContractType> = {
-    CDI: "CDI",
-    CDD: "CDD",
-    MIS: "Intérim",
-    TTI: "Intérim",
-    LIB: "Freelance",
-    SAI: "CDD",
-    permanent: "CDI",
-    contract: "CDD",
-  };
-  return byCode[offer.typeContrat] ?? "CDI";
-}
 
 type ContractFilter = "" | ContractType;
 
@@ -93,26 +72,7 @@ const PAGE_SIZE_OPTIONS_BY_SOURCE: Record<OfferSource, readonly number[]> = {
   adzuna: [20, 50],
 };
 
-const SAVED_SEARCH_KEY = "jobflow.offres.savedSearch.v1";
 const FAVORITE_OFFERS_KEY = "jobflow.offres.favorites.v1";
-
-interface SavedSearch {
-  motsCles: string;
-  location: string;
-  typeContrat: ContractFilter;
-  pageSize: number;
-  source: OfferSource;
-}
-
-function loadSavedSearch(): SavedSearch | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(SAVED_SEARCH_KEY);
-    return raw ? (JSON.parse(raw) as SavedSearch) : null;
-  } catch {
-    return null;
-  }
-}
 
 function loadFavoriteOfferIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -122,17 +82,6 @@ function loadFavoriteOfferIds(): Set<string> {
   } catch {
     return new Set();
   }
-}
-
-// Ni France Travail ni Adzuna n'ont de paramètre dédié au télétravail dans leur recherche
-// standard : on filtre côté client sur la présence du mot dans l'intitulé/la description.
-function looksRemote(offer: JobOffer): boolean {
-  const haystack = `${offer.intitule} ${offer.description}`.toLowerCase();
-  return (
-    haystack.includes("télétravail") ||
-    haystack.includes("teletravail") ||
-    haystack.includes("remote")
-  );
 }
 
 // Style aligné sur la mise en évidence de l'expérience côté candidature (ApplicationDetail) :
@@ -174,17 +123,24 @@ function OffresPage() {
   const [error, setError] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<Partial<ApplicationInput> | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [alerts, setAlerts] = useState<JobAlert[]>([]);
+  const [alertsChecking, setAlertsChecking] = useState(false);
+  const [creatingAlert, setCreatingAlert] = useState(false);
+  const [newAlertName, setNewAlertName] = useState("");
 
   useEffect(() => {
-    const saved = loadSavedSearch();
-    if (saved) {
-      setQuery(saved.motsCles);
-      setLocation(saved.location);
-      setTypeContrat(saved.typeContrat);
-      if (saved.pageSize) setPageSize(saved.pageSize);
-      if (saved.source) setSource(saved.source);
-    }
     setFavoriteIds(loadFavoriteOfferIds());
+    const stored = loadAlerts();
+    setAlerts(stored);
+    if (stored.length > 0) {
+      setAlertsChecking(true);
+      refreshAllAlerts(stored)
+        .then((updated) => {
+          setAlerts(updated);
+          saveAlerts(updated);
+        })
+        .finally(() => setAlertsChecking(false));
+    }
   }, []);
 
   const toggleFavoriteOffer = (offerId: string) => {
@@ -203,8 +159,17 @@ function OffresPage() {
     [applications],
   );
 
-  const runSearch = async (targetPage: number) => {
-    const motsCles = query.trim();
+  // Accepte des critères explicites (utilisés en ouvrant une alerte) plutôt que de ne lire
+  // que l'état du composant : juste après setSource/setQuery/setLocation, l'état React n'a
+  // pas encore été mis à jour au moment de l'appel, ce qui lancerait la recherche avec les
+  // anciennes valeurs si on ne pouvait pas les passer explicitement.
+  const runSearch = async (
+    targetPage: number,
+    overrides?: { source?: OfferSource; motsCles?: string; location?: string },
+  ) => {
+    const activeSource = overrides?.source ?? source;
+    const motsCles = (overrides?.motsCles ?? query).trim();
+    const activeLocation = overrides?.location ?? location;
     if (!motsCles) return;
     const isFirstPage = targetPage === 0;
     if (isFirstPage) setLoading(true);
@@ -212,13 +177,13 @@ function OffresPage() {
     setError(null);
     try {
       const result =
-        source === "france_travail"
+        activeSource === "france_travail"
           ? await searchFranceTravailOffers({
               data: {
                 motsCles,
                 page: targetPage,
                 pageSize,
-                ...(location.trim() ? { departement: location.trim() } : {}),
+                ...(activeLocation.trim() ? { departement: activeLocation.trim() } : {}),
               },
             })
           : await searchAdzunaOffers({
@@ -226,7 +191,7 @@ function OffresPage() {
                 motsCles,
                 page: targetPage,
                 pageSize,
-                ...(location.trim() ? { lieu: location.trim() } : {}),
+                ...(activeLocation.trim() ? { lieu: activeLocation.trim() } : {}),
               },
             });
       if (!result.ok) {
@@ -265,15 +230,67 @@ function OffresPage() {
     if (pageSize > maxSize) setPageSize(PAGE_SIZE_OPTIONS_BY_SOURCE[next][0] as number);
   };
 
-  const handleSaveSearch = () => {
+  const handleOpenCreateAlert = () => {
     const motsCles = query.trim();
     if (!motsCles) {
-      toast.error("Renseignez des mots-clés avant d'enregistrer la recherche.");
+      toast.error("Renseignez des mots-clés avant de créer une alerte.");
       return;
     }
-    const saved: SavedSearch = { motsCles, location, typeContrat, pageSize, source };
-    window.localStorage.setItem(SAVED_SEARCH_KEY, JSON.stringify(saved));
-    toast.success("Recherche enregistrée — elle sera proposée à chaque visite.");
+    setNewAlertName(`${motsCles}${location.trim() ? ` — ${location.trim()}` : ""}`);
+    setCreatingAlert(true);
+  };
+
+  const handleConfirmCreateAlert = () => {
+    const name = newAlertName.trim();
+    if (!name) {
+      toast.error("Donnez un nom à cette alerte.");
+      return;
+    }
+    const alert = createAlert({
+      name,
+      motsCles: query.trim(),
+      location: location.trim(),
+      source,
+      typeContrat,
+    });
+    const next = [alert, ...alerts];
+    setAlerts(next);
+    saveAlerts(next);
+    setCreatingAlert(false);
+    toast.success("Alerte créée — elle sera vérifiée à chaque visite de cette page.");
+    void refreshAllAlerts([alert]).then(([updated]) => {
+      if (!updated) return;
+      setAlerts((prev) => {
+        const merged = prev.map((a) => (a.id === updated.id ? updated : a));
+        saveAlerts(merged);
+        return merged;
+      });
+    });
+  };
+
+  const handleDeleteAlert = (id: string) => {
+    const next = alerts.filter((a) => a.id !== id);
+    setAlerts(next);
+    saveAlerts(next);
+    toast.success("Alerte supprimée");
+  };
+
+  // Reprend les critères d'une alerte dans le formulaire, lance la recherche, et marque ses
+  // offres en attente comme vues (le badge "nouvelles offres" repart à zéro après consultation).
+  const handleViewAlert = (alert: JobAlert) => {
+    setSource(alert.source);
+    setQuery(alert.motsCles);
+    setLocation(alert.location);
+    setTypeContrat(alert.typeContrat);
+    const updated = markAlertSeen(alert);
+    const next = alerts.map((a) => (a.id === alert.id ? updated : a));
+    setAlerts(next);
+    saveAlerts(next);
+    void runSearch(0, {
+      source: alert.source,
+      motsCles: alert.motsCles,
+      location: alert.location,
+    });
   };
 
   const visibleOffers = offers
@@ -404,12 +421,81 @@ function OffresPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={handleSaveSearch}
-            title="Enregistrer cette recherche par défaut"
+            onClick={handleOpenCreateAlert}
+            title="Créer une alerte à partir de cette recherche"
           >
-            <Save className="size-4" />
+            <BellPlus className="size-4" />
           </Button>
         </form>
+
+        {creatingAlert ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 p-3">
+            <Input
+              value={newAlertName}
+              onChange={(e) => setNewAlertName(e.target.value)}
+              placeholder="Nom de l'alerte"
+              className="sm:w-64"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleConfirmCreateAlert();
+                }
+              }}
+            />
+            <Button size="sm" onClick={handleConfirmCreateAlert}>
+              Créer l'alerte
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setCreatingAlert(false)}>
+              Annuler
+            </Button>
+          </div>
+        ) : null}
+
+        {alerts.length > 0 ? (
+          <div className="space-y-2">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Bell className="size-3.5" />
+              Mes alertes {alertsChecking ? "(vérification…)" : ""}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {alerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-card py-1.5 pl-3 pr-1.5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleViewAlert(alert)}
+                    className="flex items-center gap-2 text-left text-sm"
+                  >
+                    <span className="font-medium">{alert.name}</span>
+                    {alert.pendingOfferIds.length > 0 ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 py-0.5 text-xs font-semibold text-destructive-foreground">
+                        {alert.pendingOfferIds.length}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {alert.lastCheckedAt
+                          ? `à jour · ${relativeDateLabel(alert.lastCheckedAt)}`
+                          : "en attente"}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAlert(alert.id)}
+                    aria-label={`Supprimer l'alerte ${alert.name}`}
+                    title="Supprimer cette alerte"
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">

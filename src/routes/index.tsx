@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, CheckCircle2, Percent, Send, Trophy, Users } from "lucide-react";
+import { Bell, Briefcase, CheckCircle2, Percent, Send, Trophy, Users } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/actions";
 import { analyticsSummary, formatRate } from "@/lib/analytics";
 import { PRIORITY_DOTS, buildApplicationInsights, summarizeInsights } from "@/lib/intelligence";
+import { loadAlerts, refreshAllAlerts, saveAlerts, type JobAlert } from "@/lib/job-alerts";
 import { cn } from "@/lib/utils";
 import { formatDate, relativeDateLabel } from "@/lib/format";
 
@@ -98,6 +100,19 @@ function DashboardPage() {
   const insights = buildApplicationInsights(applications, contacts);
   const insightSummary = summarizeInsights(insights);
   const topInsights = insights.slice(0, 5);
+
+  const [alerts, setAlerts] = useState<JobAlert[]>([]);
+  useEffect(() => {
+    const stored = loadAlerts();
+    setAlerts(stored);
+    if (stored.length > 0) {
+      void refreshAllAlerts(stored).then((updated) => {
+        setAlerts(updated);
+        saveAlerts(updated);
+      });
+    }
+  }, []);
+  const pendingAlertOffers = alerts.reduce((sum, a) => sum + a.pendingOfferIds.length, 0);
 
   return (
     <AppLayout
@@ -281,6 +296,39 @@ function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          {alerts.length > 0 ? (
+            <Card className="rounded-xl shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Bell className="size-4 text-muted-foreground" />
+                  Alertes emploi
+                </CardTitle>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/offres">Voir les offres</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {pendingAlertOffers === 0 ? (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="size-4 text-success" />
+                    Aucune nouvelle offre pour le moment.
+                  </p>
+                ) : (
+                  <p className="text-sm">
+                    <span className="font-medium text-destructive">
+                      {pendingAlertOffers} nouvelle{pendingAlertOffers > 1 ? "s" : ""} offre
+                      {pendingAlertOffers > 1 ? "s" : ""}
+                    </span>{" "}
+                    <span className="text-muted-foreground">
+                      détectée{pendingAlertOffers > 1 ? "s" : ""} sur {alerts.length} alerte
+                      {alerts.length > 1 ? "s" : ""} suivie{alerts.length > 1 ? "s" : ""}.
+                    </span>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="rounded-xl shadow-none">
