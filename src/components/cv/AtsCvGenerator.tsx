@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ClipboardCopy, FileText, Sparkles } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ClipboardCopy, FileText, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +49,12 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
   const sortedApplications = [...applications].sort((a, b) =>
     (b.application_date || "").localeCompare(a.application_date || ""),
   );
+
+  const missingContactFields = [
+    !settings.name.trim() && "nom",
+    !settings.linkedinUrl.trim() && "LinkedIn",
+    !settings.websiteUrl.trim() && "site web",
+  ].filter((v): v is string => !!v);
 
   const applyApplication = (id: string) => {
     setSourceApplicationId(id);
@@ -140,6 +147,20 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
             rien inventer, mais une vérification reste indispensable.
           </DialogDescription>
         </DialogHeader>
+
+        {missingContactFields.length > 0 ? (
+          <p className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground dark:text-warning">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            <span>
+              L'en-tête du CV exporté n'affichera pas votre {missingContactFields.join(", ")} — ces
+              informations sont vides dans{" "}
+              <Link to="/parametres" className="underline underline-offset-2">
+                Paramètres
+              </Link>
+              . Renseignez-les puis revenez ici pour un CV complet.
+            </span>
+          </p>
+        ) : null}
 
         {!text ? (
           <div className="space-y-4">
