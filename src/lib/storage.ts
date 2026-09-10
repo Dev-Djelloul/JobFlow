@@ -14,6 +14,9 @@ const CV_EXPERIENCES_KEY = "jobflow.cvExperiences.v1";
 export const defaultSettings: UserSettings = {
   name: "Camille Moreau",
   email: "camille.moreau@example.com",
+  phone: "",
+  linkedinUrl: "",
+  websiteUrl: "",
   theme: "light",
   density: "comfortable",
   defaultView: "table",

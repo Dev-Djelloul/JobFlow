@@ -111,7 +111,11 @@ optimisé pour être bien parsé par un ATS et pour matcher le vocabulaire de l'
   les mots-clés et compétences mentionnés dans l'offre visée quand ils correspondent au vécu réel du candidat.
 - N'invente jamais d'expérience, de compétence ou de diplôme absent des informations fournies : si une
   information manque, ne la mentionne pas plutôt que de l'inventer.
-- Reste factuel et sobre, sans superlatifs creux.`;
+- Reste factuel et sobre, sans superlatifs creux.
+- N'écris JAMAIS de bloc "coordonnées" en tête du document (pas de nom, adresse, email, téléphone,
+  URL LinkedIn ou site web, pas de lien entre crochets) : l'application ajoute déjà cet en-tête
+  séparément, avec de vrais liens cliquables. Commence directement par la première section
+  (PROFIL) sans rien avant.`;
 
 export const generateAtsCv = createServerFn({ method: "POST" })
   .validator(

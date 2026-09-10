@@ -81,6 +81,10 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
       await downloadGeneratedCvPdf(text, {
         applicantName: settings.name || undefined,
         targetPosition,
+        email: settings.email || undefined,
+        phone: settings.phone || undefined,
+        linkedinUrl: settings.linkedinUrl || undefined,
+        websiteUrl: settings.websiteUrl || undefined,
       });
     } catch {
       toast.error("Échec de l'export PDF");

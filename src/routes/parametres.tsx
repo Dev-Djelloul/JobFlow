@@ -56,6 +56,9 @@ function SettingsPage() {
   const { resetDemoData } = useApplications();
   const [name, setName] = useState(settings.name);
   const [email, setEmail] = useState(settings.email);
+  const [phone, setPhone] = useState(settings.phone);
+  const [linkedinUrl, setLinkedinUrl] = useState(settings.linkedinUrl);
+  const [websiteUrl, setWebsiteUrl] = useState(settings.websiteUrl);
   const [error, setError] = useState<string | null>(null);
   const [cvSummary, setCvSummary] = useState(settings.cvSummary);
 
@@ -63,9 +66,20 @@ function SettingsPage() {
     if (hydrated) {
       setName(settings.name);
       setEmail(settings.email);
+      setPhone(settings.phone);
+      setLinkedinUrl(settings.linkedinUrl);
+      setWebsiteUrl(settings.websiteUrl);
       setCvSummary(settings.cvSummary);
     }
-  }, [hydrated, settings.name, settings.email, settings.cvSummary]);
+  }, [
+    hydrated,
+    settings.name,
+    settings.email,
+    settings.phone,
+    settings.linkedinUrl,
+    settings.websiteUrl,
+    settings.cvSummary,
+  ]);
 
   const saveCvSummary = () => {
     updateSettings({ cvSummary: cvSummary.trim() });
@@ -82,7 +96,13 @@ function SettingsPage() {
       return;
     }
     setError(null);
-    updateSettings({ name: name.trim(), email: email.trim() });
+    updateSettings({
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      linkedinUrl: linkedinUrl.trim(),
+      websiteUrl: websiteUrl.trim(),
+    });
     toast.success("Profil enregistré");
   };
 
@@ -108,6 +128,42 @@ function SettingsPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="phone">Téléphone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+33 6 12 34 56 78"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="linkedinUrl">Profil LinkedIn</Label>
+              <Input
+                id="linkedinUrl"
+                type="url"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="https://www.linkedin.com/in/…"
+              />
+              <p className="text-xs text-muted-foreground">
+                Rendu en lien cliquable dans l'en-tête de votre CV exporté en PDF.
+              </p>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="websiteUrl">Site web</Label>
+              <Input
+                id="websiteUrl"
+                type="url"
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                placeholder="https://mon-site.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Rendu en lien cliquable dans l'en-tête de votre CV exporté en PDF.
+              </p>
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button onClick={saveProfile}>Enregistrer</Button>

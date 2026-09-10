@@ -99,6 +99,9 @@ function CvPage() {
       await downloadCvPdf(experiences, {
         applicantName: settings.name,
         email: settings.email,
+        phone: settings.phone,
+        linkedinUrl: settings.linkedinUrl,
+        websiteUrl: settings.websiteUrl,
         cvSummary: settings.cvSummary,
       });
       toast.success("CV exporté en PDF");

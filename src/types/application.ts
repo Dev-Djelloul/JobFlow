@@ -131,6 +131,12 @@ export type ApplicationInput = Omit<
 export interface UserSettings {
   name: string;
   email: string;
+  /** Téléphone affiché dans l'en-tête du CV exporté. */
+  phone: string;
+  /** URL complète du profil LinkedIn — rendue en lien cliquable dans les CV exportés. */
+  linkedinUrl: string;
+  /** URL complète du site web personnel — rendue en lien cliquable dans les CV exportés. */
+  websiteUrl: string;
   theme: "light" | "dark";
   density: "comfortable" | "compact";
   defaultView: "table" | "kanban";
