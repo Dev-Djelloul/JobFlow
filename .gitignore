@@ -35,4 +35,4 @@ dev-dist
 *.sw?
 
 
-.venv/
+.venv/.DS_Store
