@@ -140,6 +140,9 @@ export interface UserSettings {
   avatarPreset: string;
   /** Panneau latéral replié (icônes seules) sur grand écran. */
   sidebarCollapsed: boolean;
+  /** Résumé libre du profil (expérience, compétences, formation) — sert de contexte à la
+   * génération de lettres de motivation par IA. */
+  cvSummary: string;
 }
 
 export const FOLLOW_UP_STATUSES = ["todo", "done", "cancelled"] as const;

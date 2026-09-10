@@ -6,6 +6,7 @@ import {
   FileText,
   Mail,
   Pencil,
+  Sparkles,
   Star,
   Trash2,
 } from "lucide-react";
@@ -40,6 +41,7 @@ import { StatusBadge } from "./StatusBadge";
 import { FollowUpSection } from "./FollowUpSection";
 import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
+import { CoverLetterGenerator } from "./CoverLetterGenerator";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
@@ -125,6 +127,7 @@ export function ApplicationDetail({
 }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [coverLetterOpen, setCoverLetterOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
 
   const navIndex = application
@@ -253,6 +256,9 @@ export function ApplicationDetail({
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
               <Mail className="size-4" /> Écrire un email
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCoverLetterOpen(true)}>
+              <Sparkles className="size-4" /> Lettre de motivation
             </Button>
             <Button size="sm" onClick={() => onEdit(application)}>
               <Pencil className="size-4" /> Modifier
@@ -386,6 +392,12 @@ export function ApplicationDetail({
         applicationId={application.id}
         contactId={application.contact_ids?.[0] ?? null}
         templateId={suggestTemplateId({ application })}
+      />
+
+      <CoverLetterGenerator
+        application={application}
+        open={coverLetterOpen}
+        onOpenChange={setCoverLetterOpen}
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

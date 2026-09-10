@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -56,13 +57,20 @@ function SettingsPage() {
   const [name, setName] = useState(settings.name);
   const [email, setEmail] = useState(settings.email);
   const [error, setError] = useState<string | null>(null);
+  const [cvSummary, setCvSummary] = useState(settings.cvSummary);
 
   useEffect(() => {
     if (hydrated) {
       setName(settings.name);
       setEmail(settings.email);
+      setCvSummary(settings.cvSummary);
     }
-  }, [hydrated, settings.name, settings.email]);
+  }, [hydrated, settings.name, settings.email, settings.cvSummary]);
+
+  const saveCvSummary = () => {
+    updateSettings({ cvSummary: cvSummary.trim() });
+    toast.success("Profil professionnel enregistré");
+  };
 
   const saveProfile = () => {
     if (!name.trim()) {
@@ -94,10 +102,35 @@ function SettingsPage() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button onClick={saveProfile}>Enregistrer</Button>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base">Profil professionnel (CV)</CardTitle>
+            <CardDescription>
+              Résumez votre expérience, vos compétences et votre formation en quelques phrases. Ce
+              texte sert de base à la génération de lettres de motivation par IA depuis chaque
+              candidature — plus il est précis, plus les lettres générées seront pertinentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
+              value={cvSummary}
+              onChange={(e) => setCvSummary(e.target.value)}
+              rows={8}
+              placeholder="Ex : Chef de projet digital avec 5 ans d'expérience en gestion de projets web et CRM. Compétences : pilotage d'équipes, méthodes agiles, Power Platform, IA générative. Formation : Master en gestion de projet digital (2026)…"
+            />
+            <Button onClick={saveCvSummary}>Enregistrer</Button>
           </CardContent>
         </Card>
 
@@ -110,7 +143,9 @@ function SettingsPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Mode sombre</p>
-                <p className="text-sm text-muted-foreground">Basculer entre thème clair et sombre.</p>
+                <p className="text-sm text-muted-foreground">
+                  Basculer entre thème clair et sombre.
+                </p>
               </div>
               <Switch
                 checked={settings.theme === "dark"}
@@ -155,11 +190,15 @@ function SettingsPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Vue préférée</p>
-                <p className="text-sm text-muted-foreground">Affichage privilégié des candidatures.</p>
+                <p className="text-sm text-muted-foreground">
+                  Affichage privilégié des candidatures.
+                </p>
               </div>
               <Select
                 value={settings.defaultView}
-                onValueChange={(v) => updateSettings({ defaultView: v as UserSettings["defaultView"] })}
+                onValueChange={(v) =>
+                  updateSettings({ defaultView: v as UserSettings["defaultView"] })
+                }
               >
                 <SelectTrigger className="w-44" aria-label="Vue préférée">
                   <SelectValue />

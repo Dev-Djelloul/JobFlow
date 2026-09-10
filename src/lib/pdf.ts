@@ -150,3 +150,58 @@ export async function downloadApplicationDetailPdf(application: Application) {
     .toLowerCase();
   doc.save(`jobee-flow-${safeCompany}-${stamp()}.pdf`);
 }
+
+/** Exporte une lettre de motivation (texte libre, générée ou éditée) en PDF prêt à envoyer. */
+export async function downloadCoverLetterPdf(
+  text: string,
+  application: Pick<Application, "company" | "position">,
+  applicantName?: string,
+) {
+  const { jsPDF } = await loadPdf();
+  const doc = new jsPDF();
+  const marginX = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const maxWidth = pageWidth - marginX * 2;
+  let y = 22;
+
+  if (applicantName) {
+    doc.setFontSize(11);
+    doc.text(applicantName, marginX, y);
+    y += 6;
+  }
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(formatDate(new Date().toISOString()) || "", marginX, y);
+  doc.setTextColor(0);
+  y += 10;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Candidature — ${application.position}`, marginX, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  doc.text(application.company, marginX, y);
+  doc.setTextColor(0);
+  y += 12;
+
+  doc.setFontSize(10.5);
+  const paragraphs = text.split(/\n{2,}/);
+  for (const paragraph of paragraphs) {
+    const lines = doc.splitTextToSize(paragraph.trim(), maxWidth) as string[];
+    for (const line of lines) {
+      if (y > doc.internal.pageSize.getHeight() - 20) {
+        doc.addPage();
+        y = 22;
+      }
+      doc.text(line, marginX, y);
+      y += 5.5;
+    }
+    y += 4;
+  }
+
+  const safeCompany = (application.company || "candidature")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .toLowerCase();
+  doc.save(`jobee-flow-lettre-${safeCompany}-${stamp()}.pdf`);
+}

@@ -18,6 +18,7 @@ export const defaultSettings: UserSettings = {
   avatar: "",
   avatarPreset: "primary",
   sidebarCollapsed: false,
+  cvSummary: "",
 };
 
 const isBrowser = () => typeof window !== "undefined";
