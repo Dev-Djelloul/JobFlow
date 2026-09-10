@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ClipboardCopy, Mail } from "lucide-react";
+import { Check, ClipboardCopy, Mail, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +25,12 @@ import { Separator } from "@/components/ui/separator";
 import { VariablePicker } from "./VariablePicker";
 import { useApplications } from "@/hooks/useApplications";
 import { useContacts } from "@/hooks/useContacts";
+import { useCv } from "@/hooks/useCv";
 import { useEmailTemplates } from "@/hooks/useEmailTemplates";
+import { useSettings } from "@/hooks/useSettings";
 import { companyKey } from "@/lib/companies";
 import { contactFullName, contactsForCompany } from "@/lib/contacts";
+import { downloadDataUrl } from "@/lib/files";
 import {
   buildMailtoUrl,
   buildVariableValues,
@@ -35,6 +39,7 @@ import {
   renderTemplate,
   insertAt,
 } from "@/lib/email";
+import { downloadCoverLetterPdf, downloadGeneratedCvPdf } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
 import { EMAIL_VARIABLE_LABELS, type EmailVariable } from "@/types/email";
 
@@ -60,6 +65,8 @@ export function EmailComposer({
   const { applications } = useApplications();
   const { contacts } = useContacts();
   const { templates } = useEmailTemplates();
+  const { settings } = useSettings();
+  const { cvFile } = useCv();
 
   const [step, setStep] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -69,6 +76,9 @@ export function EmailComposer({
   const [body, setBody] = useState("");
   const [to, setTo] = useState("");
   const [edited, setEdited] = useState(false);
+  const [attachLetter, setAttachLetter] = useState(false);
+  const [attachCv, setAttachCv] = useState(false);
+  const [preparingAttachments, setPreparingAttachments] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const lastFocused = useRef<"subject" | "body">("body");
@@ -81,11 +91,18 @@ export function EmailComposer({
     setSelectedApp(applicationId ?? NONE);
     setSelectedContact(contactId ?? NONE);
     setSelectedTemplate(templateId ?? templates[0]?.id ?? "");
+    setAttachLetter(false);
+    setAttachCv(false);
   }, [open, applicationId, contactId, templateId, templates]);
 
   const application = applications.find((a) => a.id === selectedApp) ?? null;
   const contact = contacts.find((c) => c.id === selectedContact) ?? null;
   const template = templates.find((t) => t.id === selectedTemplate) ?? null;
+
+  const hasLetter = !!application?.coverLetterText;
+  const hasAtsCv = !!application?.atsCvText;
+  const hasCv = hasAtsCv || !!cvFile;
+  const cvAttachmentLabel = hasAtsCv ? "CV optimisé ATS (cette candidature)" : "CV importé";
 
   const availableContacts = useMemo(() => {
     if (application) {
@@ -170,6 +187,50 @@ export function EmailComposer({
       window.location.href = buildMailtoUrl(to, renderedSubject, renderedBody);
     } catch {
       toast.error("Impossible d'ouvrir le client email.");
+    }
+  };
+
+  // Un lien mailto: ne peut techniquement pas joindre de fichier (limitation des navigateurs,
+  // pas de l'application) : on télécharge donc les pièces sélectionnées puis on ouvre le client
+  // mail, à charge pour l'utilisateur de les glisser dans le brouillon qui s'ouvre.
+  const handleMailtoWithAttachments = async () => {
+    if (!to.trim()) {
+      toast.error("Renseignez un destinataire avant d'ouvrir votre client email.");
+      return;
+    }
+    if (!attachLetter && !attachCv) {
+      handleMailto();
+      return;
+    }
+    setPreparingAttachments(true);
+    try {
+      if (attachLetter && application?.coverLetterText) {
+        await downloadCoverLetterPdf(
+          application.coverLetterText,
+          application,
+          settings.name || undefined,
+        );
+      }
+      if (attachCv) {
+        if (hasAtsCv && application?.atsCvText) {
+          await downloadGeneratedCvPdf(application.atsCvText, {
+            applicantName: settings.name || undefined,
+            targetPosition: application.position,
+            email: settings.email || undefined,
+            phone: settings.phone || undefined,
+            linkedinUrl: settings.linkedinUrl || undefined,
+            websiteUrl: settings.websiteUrl || undefined,
+          });
+        } else if (cvFile) {
+          downloadDataUrl(cvFile.dataUrl, cvFile.fileName);
+        }
+      }
+      toast.info("Pièce(s) téléchargée(s) — glissez-les dans le brouillon qui s'ouvre.");
+      handleMailto();
+    } catch {
+      toast.error("Échec de la préparation des pièces jointes.");
+    } finally {
+      setPreparingAttachments(false);
     }
   };
 
@@ -333,6 +394,33 @@ export function EmailComposer({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Message</p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{renderedBody || "—"}</p>
             </div>
+
+            {hasLetter || hasCv ? (
+              <div className="space-y-2 rounded-lg border p-3">
+                <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                  <Paperclip className="size-3.5" /> Pièces jointes
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Un mailto: ne peut pas joindre de fichier automatiquement — les pièces cochées
+                  sont téléchargées, à vous de les glisser dans le brouillon qui s'ouvre.
+                </p>
+                {hasLetter ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={attachLetter}
+                      onCheckedChange={(v) => setAttachLetter(v === true)}
+                    />
+                    Lettre de motivation
+                  </label>
+                ) : null}
+                {hasCv ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={attachCv} onCheckedChange={(v) => setAttachCv(v === true)} />
+                    {cvAttachmentLabel}
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -352,8 +440,16 @@ export function EmailComposer({
               <Button variant="outline" onClick={handleCopy}>
                 <ClipboardCopy className="size-4" /> Copier
               </Button>
-              <Button onClick={handleMailto}>
-                <Mail className="size-4" /> Ouvrir dans mon client mail
+              <Button
+                onClick={() => void handleMailtoWithAttachments()}
+                disabled={preparingAttachments}
+              >
+                <Mail className="size-4" />
+                {preparingAttachments
+                  ? "Préparation…"
+                  : attachLetter || attachCv
+                    ? "Télécharger les pièces et ouvrir mon client mail"
+                    : "Ouvrir dans mon client mail"}
               </Button>
             </div>
           )}

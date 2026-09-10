@@ -1,6 +1,6 @@
 import type { Application, UserSettings } from "@/types/application";
 import type { Contact } from "@/types/contact";
-import type { CvExperience } from "@/types/cv";
+import type { CvExperience, CvFile } from "@/types/cv";
 import type { EmailTemplate } from "@/types/email";
 import { seedApplications } from "./seed-data";
 import { seedContacts } from "./seed-contacts";
@@ -10,6 +10,7 @@ const CONTACTS_KEY = "jobflow.contacts.v1";
 const SETTINGS_KEY = "jobflow.settings.v1";
 const EMAIL_TEMPLATES_KEY = "jobflow.emailTemplates.v1";
 const CV_EXPERIENCES_KEY = "jobflow.cvExperiences.v1";
+const CV_FILE_KEY = "jobflow.cvFile.v1";
 
 export const defaultSettings: UserSettings = {
   name: "Camille Moreau",
@@ -250,6 +251,39 @@ export function saveCvExperiences(experiences: CvExperience[]): void {
   if (!isBrowser()) return;
   try {
     window.localStorage.setItem(CV_EXPERIENCES_KEY, JSON.stringify(experiences));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadCvFile(): CvFile | null {
+  if (!isBrowser()) return null;
+  try {
+    const raw = window.localStorage.getItem(CV_FILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CvFile>;
+    return parsed && typeof parsed.dataUrl === "string" ? (parsed as CvFile) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Renvoie false si l'écriture échoue (ex. quota localStorage dépassé) — l'appelant doit
+ * prévenir l'utilisateur plutôt que de croire le fichier enregistré silencieusement. */
+export function saveCvFile(file: CvFile): boolean {
+  if (!isBrowser()) return false;
+  try {
+    window.localStorage.setItem(CV_FILE_KEY, JSON.stringify(file));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearCvFile(): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.removeItem(CV_FILE_KEY);
   } catch {
     /* ignore */
   }

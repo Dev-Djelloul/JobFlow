@@ -43,6 +43,7 @@ import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
 import { CoverLetterGenerator } from "./CoverLetterGenerator";
 import { suggestTemplateId } from "@/lib/email";
+import { ApplicationDocumentsSection } from "./ApplicationDocumentsSection";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import { AddressLink } from "@/components/common/AddressLink";
@@ -346,6 +347,10 @@ export function ApplicationDetail({
               {application.notes || "Aucune note pour le moment."}
             </p>
           </div>
+
+          <Separator />
+
+          <ApplicationDocumentsSection application={application} />
 
           <Separator />
 

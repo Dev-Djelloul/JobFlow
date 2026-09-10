@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ClipboardCopy, FileText, Sparkles, TriangleAlert } from "lucide-react";
+import { ClipboardCopy, FileText, Save, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,12 +31,14 @@ import { downloadGeneratedCvPdf } from "@/lib/pdf";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pré-sélectionne cette candidature à l'ouverture (ex. depuis l'espace Documents). */
+  applicationId?: string | null;
 }
 
-export function AtsCvGenerator({ open, onOpenChange }: Props) {
+export function AtsCvGenerator({ open, onOpenChange, applicationId = null }: Props) {
   const { settings } = useSettings();
   const { experiences } = useCv();
-  const { applications } = useApplications();
+  const { applications, updateApplication } = useApplications();
   const [sourceApplicationId, setSourceApplicationId] = useState("");
   const [targetPosition, setTargetPosition] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
@@ -63,6 +65,19 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
     setTargetPosition(app.position);
     setTargetCompany(app.company);
     setJobDescription(app.notes || "");
+  };
+
+  // Pré-sélectionne la candidature passée en prop à chaque ouverture (ex. depuis son espace
+  // Documents) — l'utilisateur peut toujours en choisir une autre via le menu déroulant.
+  useEffect(() => {
+    if (open && applicationId) applyApplication(applicationId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, applicationId]);
+
+  const handleAssociate = () => {
+    if (!sourceApplicationId) return;
+    updateApplication(sourceApplicationId, { atsCvText: text });
+    toast.success("CV ATS associé à la candidature");
   };
 
   const runGeneration = async () => {
@@ -244,6 +259,11 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
               <Button variant="outline" onClick={handleCopy} disabled={loading}>
                 <ClipboardCopy className="size-4" /> Copier
               </Button>
+              {sourceApplicationId ? (
+                <Button variant="outline" onClick={handleAssociate} disabled={loading}>
+                  <Save className="size-4" /> Associer à cette candidature
+                </Button>
+              ) : null}
               <Button onClick={handleExportPdf} disabled={loading || exporting}>
                 <FileText className="size-4" /> {exporting ? "Génération…" : "Exporter en PDF"}
               </Button>

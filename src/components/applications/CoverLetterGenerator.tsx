@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardCopy, FileText, Sparkles } from "lucide-react";
+import { ClipboardCopy, FileText, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { generateCoverLetter } from "@/lib/openrouter";
 import { downloadCoverLetterPdf } from "@/lib/pdf";
+import { useApplications } from "@/hooks/useApplications";
 import { useSettings } from "@/hooks/useSettings";
 import type { Application } from "@/types/application";
 
@@ -24,6 +25,7 @@ interface Props {
 
 export function CoverLetterGenerator({ application, open, onOpenChange }: Props) {
   const { settings } = useSettings();
+  const { updateApplication } = useApplications();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,15 +56,23 @@ export function CoverLetterGenerator({ application, open, onOpenChange }: Props)
     }
   };
 
-  // Génère automatiquement à l'ouverture si le dialogue est vide (premier essai) ; les
-  // essais suivants passent par le bouton "Régénérer" pour ne pas relancer un appel IA
-  // (facturé côté OpenRouter) à chaque réouverture du dialogue.
+  // À l'ouverture : reprend la lettre déjà enregistrée sur cette candidature s'il y en a une,
+  // sinon génère automatiquement (premier essai). Les essais suivants passent par le bouton
+  // "Régénérer" pour ne pas relancer un appel IA (facturé côté OpenRouter) à chaque réouverture.
   useEffect(() => {
-    if (open && !text && !loading && !error) {
-      void runGeneration();
+    if (!open || text || loading || error) return;
+    if (application.coverLetterText) {
+      setText(application.coverLetterText);
+      return;
     }
+    void runGeneration();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const handleSaveToApplication = () => {
+    updateApplication(application.id, { coverLetterText: text });
+    toast.success("Lettre enregistrée sur la candidature");
+  };
 
   const handleCopy = async () => {
     try {
@@ -131,6 +141,9 @@ export function CoverLetterGenerator({ application, open, onOpenChange }: Props)
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleCopy} disabled={!text || loading}>
               <ClipboardCopy className="size-4" /> Copier
+            </Button>
+            <Button variant="outline" onClick={handleSaveToApplication} disabled={!text || loading}>
+              <Save className="size-4" /> Enregistrer sur la candidature
             </Button>
             <Button onClick={handleExportPdf} disabled={!text || loading || exporting}>
               <FileText className="size-4" /> {exporting ? "Génération…" : "Exporter en PDF"}

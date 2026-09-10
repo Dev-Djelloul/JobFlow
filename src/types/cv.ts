@@ -22,3 +22,13 @@ export const emptyCvExperienceInput = (): CvExperienceInput => ({
   current: false,
   description: "",
 });
+
+/** CV "maître" importé depuis la machine de l'utilisateur — un seul fichier, réutilisé partout
+ * (Mon CV, et chaque candidature) plutôt qu'un fichier différent par candidature, pour rester
+ * léger vis-à-vis du quota de stockage local du navigateur. */
+export interface CvFile {
+  /** Le PDF encodé en data URL — permet un aperçu inline (iframe) sans backend. */
+  dataUrl: string;
+  fileName: string;
+  updated_at: string;
+}

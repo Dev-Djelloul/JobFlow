@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { CvExperience, CvExperienceInput } from "@/types/cv";
-import { loadCvExperiences, saveCvExperiences } from "@/lib/storage";
+import type { CvExperience, CvExperienceInput, CvFile } from "@/types/cv";
+import {
+  clearCvFile as clearCvFileStorage,
+  loadCvExperiences,
+  loadCvFile,
+  saveCvExperiences,
+  saveCvFile,
+} from "@/lib/storage";
 import { CvContext, useCv } from "./cv-context";
 
 export { useCv };
@@ -13,10 +19,12 @@ const newId = () =>
 export function CvProvider({ children }: { children: ReactNode }) {
   const [experiences, setExperiences] = useState<CvExperience[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cvFile, setCvFileState] = useState<CvFile | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setExperiences(loadCvExperiences());
+      setCvFileState(loadCvFile());
       setLoading(false);
     }, 250);
     return () => window.clearTimeout(timer);
@@ -53,9 +61,38 @@ export function CvProvider({ children }: { children: ReactNode }) {
     [experiences, persist],
   );
 
+  const setCvFile = useCallback((file: CvFile) => {
+    const ok = saveCvFile(file);
+    if (ok) setCvFileState(file);
+    return ok;
+  }, []);
+
+  const clearCvFile = useCallback(() => {
+    clearCvFileStorage();
+    setCvFileState(null);
+  }, []);
+
   const value = useMemo(
-    () => ({ experiences, loading, createExperience, updateExperience, deleteExperience }),
-    [experiences, loading, createExperience, updateExperience, deleteExperience],
+    () => ({
+      experiences,
+      loading,
+      createExperience,
+      updateExperience,
+      deleteExperience,
+      cvFile,
+      setCvFile,
+      clearCvFile,
+    }),
+    [
+      experiences,
+      loading,
+      createExperience,
+      updateExperience,
+      deleteExperience,
+      cvFile,
+      setCvFile,
+      clearCvFile,
+    ],
   );
 
   return <CvContext.Provider value={value}>{children}</CvContext.Provider>;

@@ -119,6 +119,10 @@ export interface Application {
   contact_ids: string[];
   /** Mise en avant manuelle — absente des données antérieures (traitée comme false). */
   favorite?: boolean;
+  /** Dernière lettre de motivation générée/éditée pour cette candidature (texte libre). */
+  coverLetterText?: string;
+  /** CV optimisé ATS associé à cette candidature (texte libre, explicitement enregistré). */
+  atsCvText?: string;
   created_at: string;
   updated_at: string;
 }
