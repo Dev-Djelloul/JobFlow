@@ -303,3 +303,81 @@ export async function downloadCvPdf(
   const safeName = (options.applicantName || "cv").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   doc.save(`jobee-flow-${safeName}-${stamp()}.pdf`);
 }
+
+/** Une ligne est considérée comme un titre de section si elle est courte et tout en majuscules. */
+function isSectionHeading(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.length > 60) return false;
+  const letters = trimmed.replace(/[^a-zàâäéèêëïîôöùûüçA-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/g, "");
+  return letters.length > 0 && letters === letters.toUpperCase();
+}
+
+/** Exporte un CV généré par IA (texte libre structuré en sections) en PDF prêt à envoyer. */
+export async function downloadGeneratedCvPdf(
+  text: string,
+  options: { applicantName?: string | undefined; targetPosition?: string | undefined } = {},
+) {
+  const { jsPDF } = await loadPdf();
+  const doc = new jsPDF();
+  const marginX = 18;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const maxWidth = pageWidth - marginX * 2;
+  let y = 20;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > doc.internal.pageSize.getHeight() - 16) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(47, 79, 158);
+  doc.text(options.applicantName || "Curriculum Vitae", marginX, y);
+  doc.setTextColor(0);
+  y += 7;
+
+  if (options.targetPosition) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(options.targetPosition, marginX, y);
+    doc.setTextColor(0);
+    y += 8;
+  } else {
+    y += 3;
+  }
+
+  const rawLines = text.split("\n");
+  doc.setFontSize(10);
+  for (const rawLine of rawLines) {
+    const line = rawLine.trim();
+    if (!line) {
+      y += 3;
+      continue;
+    }
+    if (isSectionHeading(line)) {
+      ensureSpace(9);
+      y += 2;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      doc.setTextColor(47, 79, 158);
+      doc.text(line, marginX, y);
+      doc.setTextColor(0);
+      y += 5.5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      continue;
+    }
+    const wrapped = doc.splitTextToSize(line, maxWidth) as string[];
+    for (const w of wrapped) {
+      ensureSpace(5);
+      doc.text(w, marginX, y);
+      y += 5;
+    }
+  }
+
+  const safeName = (options.applicantName || "cv-ats").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  doc.save(`jobee-flow-${safeName}-ats-${stamp()}.pdf`);
+}

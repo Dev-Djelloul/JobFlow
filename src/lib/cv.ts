@@ -25,3 +25,16 @@ export function sortExperiences(experiences: CvExperience[]): CvExperience[] {
     return (b.startDate || "").localeCompare(a.startDate || "");
   });
 }
+
+/** Sérialise les expériences en texte lisible, destiné au contexte d'un prompt IA. */
+export function serializeExperiencesForAi(experiences: CvExperience[]): string {
+  return sortExperiences(experiences)
+    .map((exp) => {
+      const meta = [exp.company, exp.location].filter(Boolean).join(" · ");
+      const period = experiencePeriodLabel(exp);
+      const lines = [`- ${exp.title}${meta ? ` (${meta})` : ""}${period ? ` — ${period}` : ""}`];
+      if (exp.description) lines.push(`  ${exp.description.replace(/\n/g, "\n  ")}`);
+      return lines.join("\n");
+    })
+    .join("\n");
+}

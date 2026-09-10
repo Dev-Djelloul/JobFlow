@@ -21,6 +21,7 @@ export const defaultSettings: UserSettings = {
   avatarPreset: "primary",
   sidebarCollapsed: false,
   cvSummary: "",
+  cvImportedText: "",
 };
 
 const isBrowser = () => typeof window !== "undefined";

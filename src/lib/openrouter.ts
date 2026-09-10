@@ -97,3 +97,104 @@ Rédige la lettre de motivation.`;
       return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
     }
   });
+
+const ATS_SYSTEM_PROMPT = `Tu es un expert en rédaction de CV optimisés pour les ATS (Applicant Tracking
+Systems, les logiciels de tri automatique des candidatures) sur le marché de l'emploi français.
+Tu reçois le CV existant du candidat (texte brut, éventuellement issu d'un import PDF imparfait), son résumé de
+profil, ses expériences professionnelles structurées, et l'offre visée. Tu produis un CV complet et réécrit,
+optimisé pour être bien parsé par un ATS et pour matcher le vocabulaire de l'offre :
+- Structure en sections claires avec des titres en MAJUSCULES sur leur propre ligne (PROFIL, COMPÉTENCES,
+  EXPÉRIENCE PROFESSIONNELLE, FORMATION le cas échéant) — pas de tableaux, pas de colonnes, pas de markdown
+  (pas de #, pas de **, pas de puces avec des caractères spéciaux : utilise des tirets "-").
+- Reprend les informations réelles fournies (dates, entreprises, intitulés) sans en inventer.
+- Reformule les expériences en bullet points commençant par des verbes d'action, en intégrant naturellement
+  les mots-clés et compétences mentionnés dans l'offre visée quand ils correspondent au vécu réel du candidat.
+- N'invente jamais d'expérience, de compétence ou de diplôme absent des informations fournies : si une
+  information manque, ne la mentionne pas plutôt que de l'inventer.
+- Reste factuel et sobre, sans superlatifs creux.`;
+
+export const generateAtsCv = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      applicantName: z.string().trim().max(120).optional(),
+      cvSummary: z.string().trim().max(4000).optional(),
+      /** Texte des expériences professionnelles structurées, déjà mis en forme côté client. */
+      experiencesText: z.string().trim().max(8000).optional(),
+      /** Texte extrait (et éventuellement corrigé) d'un CV PDF existant. */
+      cvImportedText: z.string().trim().max(12000).optional(),
+      targetPosition: z.string().trim().min(1).max(200),
+      targetCompany: z.string().trim().max(200).optional(),
+      jobDescription: z.string().trim().max(6000).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<GenerationResult> => {
+    try {
+      const apiKey = process.env["OPENROUTER_API_KEY"];
+      if (!apiKey) {
+        return {
+          ok: false,
+          error:
+            "Génération IA non configurée : variable OPENROUTER_API_KEY manquante sur le Worker.",
+        };
+      }
+      if (
+        !data.cvSummary?.trim() &&
+        !data.experiencesText?.trim() &&
+        !data.cvImportedText?.trim()
+      ) {
+        return {
+          ok: false,
+          error:
+            "Aucune information disponible : renseignez votre résumé de profil, vos expériences ou importez votre CV existant avant de générer un CV optimisé.",
+        };
+      }
+
+      const userPrompt = `Poste visé : ${data.targetPosition}
+${data.targetCompany ? `Entreprise : ${data.targetCompany}\n` : ""}${
+        data.jobDescription ? `Description de l'offre :\n${data.jobDescription}\n` : ""
+      }
+${data.applicantName ? `Nom du candidat : ${data.applicantName}\n` : ""}
+${data.cvSummary ? `Résumé de profil fourni par le candidat :\n${data.cvSummary}\n` : ""}
+${data.experiencesText ? `Expériences professionnelles structurées :\n${data.experiencesText}\n` : ""}
+${data.cvImportedText ? `CV existant du candidat (texte brut) :\n${data.cvImportedText}\n` : ""}
+
+Rédige le CV optimisé ATS complet.`;
+
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://jobflow.digitalblueskye.com",
+          "X-Title": "JobFlow",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: ATS_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.5,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        return {
+          ok: false,
+          error: `Génération échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+        };
+      }
+
+      const json = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = json.choices?.[0]?.message?.content?.trim();
+      if (!text) {
+        return { ok: false, error: "La réponse du modèle était vide." };
+      }
+      return { ok: true, text };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
+    }
+  });
