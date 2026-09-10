@@ -113,27 +113,33 @@ function CvPage() {
     <AppLayout
       title="Mon CV"
       description="Vos expériences professionnelles, prêtes à être exportées en PDF."
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setAtsOpen(true)}>
-            <Sparkles className="size-4" />
-            <span className="hidden sm:inline">CV optimisé ATS</span>
-          </Button>
-          <Button variant="outline" onClick={handleExport} disabled={exporting}>
-            <Download className="size-4" />
-            <span className="hidden sm:inline">Exporter en PDF</span>
-          </Button>
-          <Button onClick={openCreate}>
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">Ajouter une expérience</span>
-          </Button>
-        </div>
-      }
     >
       {loading ? (
         <LoadingState rows={4} />
       ) : (
         <div className="space-y-4">
+          <Card className="rounded-xl border-primary/20 bg-primary/[0.03] shadow-none">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="size-4 text-primary" />
+                Générer et exporter mon CV
+              </CardTitle>
+              <CardDescription>
+                Un export direct de vos données, ou une version réécrite par IA et alignée sur une
+                offre précise pour maximiser le matching ATS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <Button onClick={() => setAtsOpen(true)}>
+                <Sparkles className="size-4" /> CV optimisé ATS
+              </Button>
+              <Button variant="outline" onClick={handleExport} disabled={exporting}>
+                <Download className="size-4" />
+                {exporting ? "Export en cours…" : "Exporter en PDF"}
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="rounded-xl shadow-none">
             <CardHeader>
               <CardTitle className="text-base">Résumé du profil</CardTitle>
@@ -158,12 +164,19 @@ function CvPage() {
           </Card>
 
           <Card className="rounded-xl shadow-none">
-            <CardHeader>
-              <CardTitle className="text-base">Expérience professionnelle</CardTitle>
-              <CardDescription>
-                {experiences.length} expérience{experiences.length > 1 ? "s" : ""} enregistrée
-                {experiences.length > 1 ? "s" : ""}.
-              </CardDescription>
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base">Expérience professionnelle</CardTitle>
+                <CardDescription>
+                  {experiences.length} expérience{experiences.length > 1 ? "s" : ""} enregistrée
+                  {experiences.length > 1 ? "s" : ""}.
+                </CardDescription>
+              </div>
+              {sorted.length > 0 ? (
+                <Button size="sm" onClick={openCreate}>
+                  <Plus className="size-4" /> Ajouter une expérience
+                </Button>
+              ) : null}
             </CardHeader>
             <CardContent>
               {sorted.length === 0 ? (
