@@ -17,6 +17,7 @@ import { Route as DataQualityRouteImport } from './routes/data-quality'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as KanbanRouteImport } from './routes/kanban'
+import { Route as MonCvRouteImport } from './routes/mon-cv'
 import { Route as OffresRouteImport } from './routes/offres'
 import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as ContactsIndexRouteImport } from './routes/contacts.index'
@@ -64,6 +65,11 @@ const KanbanRoute = KanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonCvRoute = MonCvRouteImport.update({
+  id: '/mon-cv',
+  path: '/mon-cv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffresRoute = OffresRouteImport.update({
   id: '/offres',
   path: '/offres',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
   '/kanban': typeof KanbanRoute
+  '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
   '/parametres': typeof ParametresRoute
   '/contacts/$contactId': typeof ContactsContactIdRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/mon-cv'
     | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/mon-cv'
     | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/intelligence'
     | '/kanban'
+    | '/mon-cv'
     | '/offres'
     | '/parametres'
     | '/contacts/$contactId'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   EmailsRoute: typeof EmailsRoute
   IntelligenceRoute: typeof IntelligenceRoute
   KanbanRoute: typeof KanbanRoute
+  MonCvRoute: typeof MonCvRoute
   OffresRoute: typeof OffresRoute
   ParametresRoute: typeof ParametresRoute
   ContactsContactIdRoute: typeof ContactsContactIdRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KanbanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mon-cv': {
+      id: '/mon-cv'
+      path: '/mon-cv'
+      fullPath: '/mon-cv'
+      preLoaderRoute: typeof MonCvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offres': {
       id: '/offres'
       path: '/offres'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailsRoute: EmailsRoute,
   IntelligenceRoute: IntelligenceRoute,
   KanbanRoute: KanbanRoute,
+  MonCvRoute: MonCvRoute,
   OffresRoute: OffresRoute,
   ParametresRoute: ParametresRoute,
   ContactsContactIdRoute: ContactsContactIdRoute,

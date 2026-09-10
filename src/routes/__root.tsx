@@ -15,10 +15,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { SettingsProvider } from "@/hooks/useSettings";
 import { ApplicationsProvider } from "@/hooks/useApplications";
 import { ContactsProvider } from "@/hooks/useContacts";
+import { CvProvider } from "@/hooks/useCv";
 import { EmailTemplatesProvider } from "@/hooks/useEmailTemplates";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
-
 
 function NotFoundComponent() {
   return (
@@ -149,17 +149,18 @@ function RootComponent() {
       <SettingsProvider>
         <ApplicationsProvider>
           <ContactsProvider>
-            <EmailTemplatesProvider>
-              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-              <Outlet />
-              <Toaster position="top-right" richColors />
-              <OfflineIndicator />
-              <UpdatePrompt />
-            </EmailTemplatesProvider>
+            <CvProvider>
+              <EmailTemplatesProvider>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+                <Toaster position="top-right" richColors />
+                <OfflineIndicator />
+                <UpdatePrompt />
+              </EmailTemplatesProvider>
+            </CvProvider>
           </ContactsProvider>
         </ApplicationsProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );
 }
-

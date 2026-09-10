@@ -1,5 +1,6 @@
 import type { Application, UserSettings } from "@/types/application";
 import type { Contact } from "@/types/contact";
+import type { CvExperience } from "@/types/cv";
 import type { EmailTemplate } from "@/types/email";
 import { seedApplications } from "./seed-data";
 import { seedContacts } from "./seed-contacts";
@@ -8,6 +9,7 @@ const APPS_KEY = "jobflow.applications.v1";
 const CONTACTS_KEY = "jobflow.contacts.v1";
 const SETTINGS_KEY = "jobflow.settings.v1";
 const EMAIL_TEMPLATES_KEY = "jobflow.emailTemplates.v1";
+const CV_EXPERIENCES_KEY = "jobflow.cvExperiences.v1";
 
 export const defaultSettings: UserSettings = {
   name: "Camille Moreau",
@@ -205,6 +207,45 @@ export function saveSettings(settings: UserSettings): void {
   if (!isBrowser()) return;
   try {
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Migration rétrocompatible : les expériences CV sont normalisées champ par champ. */
+export function normalizeCvExperiences(list: CvExperience[]): CvExperience[] {
+  return list
+    .filter((e) => e && typeof e === "object" && typeof e.id === "string")
+    .map((e) => ({
+      id: e.id,
+      title: e.title ?? "",
+      company: e.company ?? "",
+      location: e.location ?? "",
+      startDate: e.startDate ?? "",
+      endDate: e.endDate ?? "",
+      current: e.current === true,
+      description: e.description ?? "",
+      created_at: e.created_at ?? "",
+      updated_at: e.updated_at ?? "",
+    }));
+}
+
+export function loadCvExperiences(): CvExperience[] {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(CV_EXPERIENCES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as CvExperience[];
+    return Array.isArray(parsed) ? normalizeCvExperiences(parsed) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCvExperiences(experiences: CvExperience[]): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(CV_EXPERIENCES_KEY, JSON.stringify(experiences));
   } catch {
     /* ignore */
   }
