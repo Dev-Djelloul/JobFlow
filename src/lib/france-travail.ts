@@ -87,7 +87,11 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
   .validator(
     z.object({
       motsCles: z.string().trim().min(1).max(200),
-      departement: z.string().trim().max(3).optional(),
+      // Volontairement permissif ici (la contrainte réelle — code à 2-3 caractères — est
+      // vérifiée dans le handler) : un schéma trop strict ferait planter le validateur avec
+      // une erreur Zod brute, avant même d'atteindre le try/catch, si l'utilisateur tape un
+      // nom de ville au lieu d'un code département.
+      departement: z.string().trim().max(20).optional(),
       typeContrat: z.string().trim().max(10).optional(),
       /** Nombre d'offres par page, choisi côté client (20 à 150). */
       pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).default(20),
@@ -97,6 +101,16 @@ export const searchFranceTravailOffers = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }): Promise<JobOfferSearchResult> => {
     try {
+      // Code département INSEE : 1 à 3 chiffres, ou "2A"/"2B" pour la Corse. Un nom de ville
+      // ("paris") ne correspond pas à ce format — France Travail filtre par département, pas
+      // par ville en texte libre (contrairement à Adzuna).
+      if (data.departement && !/^(2[ab]|\d{1,3})$/i.test(data.departement)) {
+        return {
+          ok: false,
+          offers: [],
+          error: `Le champ lieu doit contenir un code département (ex : 75, 92, 2A) pour France Travail, pas un nom de ville — « ${data.departement} » n'est pas reconnu. Passez sur Adzuna pour rechercher par ville.`,
+        };
+      }
       const token = await getAccessToken();
       const url = new URL(SEARCH_URL);
       url.searchParams.set("motsCles", data.motsCles);
