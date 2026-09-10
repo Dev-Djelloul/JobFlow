@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
+import { SourceLogo } from "@/components/common/SourceLogo";
 import { useApplications } from "@/hooks/useApplications";
 import { companyKey } from "@/lib/companies";
 import {
@@ -525,7 +526,12 @@ function AnalyticsPage() {
                           <tbody>
                             {sources.map((s) => (
                               <tr key={s.source} className="border-b last:border-0">
-                                <td className="py-2 pr-3">{s.label}</td>
+                                <td className="py-2 pr-3">
+                                  <span className="flex items-center gap-1.5">
+                                    <SourceLogo source={s.source} size={16} />
+                                    {s.label}
+                                  </span>
+                                </td>
                                 <td className="py-2 pr-3 text-right tabular-nums">{s.total}</td>
                                 <td className="py-2 pr-3 text-right tabular-nums">
                                   {s.interviews}

@@ -137,7 +137,10 @@ function ApplicationsPage() {
                 <SelectItem value="none">Sans source</SelectItem>
                 {APPLICATION_SOURCES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {SOURCE_LABELS[s]}
+                    <span className="flex items-center gap-1.5">
+                      <SourceLogo source={s} size={14} />
+                      {SOURCE_LABELS[s]}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

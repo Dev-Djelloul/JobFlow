@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SourceLogo } from "@/components/common/SourceLogo";
 import {
   APPLICATION_SOURCES,
   CONTRACT_TYPES,
@@ -242,7 +243,10 @@ export function ApplicationForm({
                 <SelectItem value="none">Non renseignée</SelectItem>
                 {APPLICATION_SOURCES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {SOURCE_LABELS[s]}
+                    <span className="flex items-center gap-1.5">
+                      <SourceLogo source={s} size={14} />
+                      {SOURCE_LABELS[s]}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
