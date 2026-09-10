@@ -30,7 +30,7 @@ import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { useSettings } from "@/hooks/useSettings";
 import { companyKey } from "@/lib/companies";
 import { contactFullName, contactsForCompany } from "@/lib/contacts";
-import { downloadDataUrl } from "@/lib/files";
+import { dataUrlToBlob, downloadDataUrl, downloadFilesAsZip } from "@/lib/files";
 import {
   buildMailtoUrl,
   buildVariableValues,
@@ -39,7 +39,7 @@ import {
   renderTemplate,
   insertAt,
 } from "@/lib/email";
-import { downloadCoverLetterPdf, downloadGeneratedCvPdf } from "@/lib/pdf";
+import { coverLetterPdfBlob, generatedCvPdfBlob } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
 import { EMAIL_VARIABLE_LABELS, type EmailVariable } from "@/types/email";
 
@@ -192,7 +192,10 @@ export function EmailComposer({
 
   // Un lien mailto: ne peut techniquement pas joindre de fichier (limitation des navigateurs,
   // pas de l'application) : on télécharge donc les pièces sélectionnées puis on ouvre le client
-  // mail, à charge pour l'utilisateur de les glisser dans le brouillon qui s'ouvre.
+  // mail, à charge pour l'utilisateur de les glisser dans le brouillon qui s'ouvre. Plusieurs
+  // fichiers sont regroupés en une seule archive ZIP : au-delà d'un fichier, les navigateurs
+  // bloquent silencieusement les téléchargements suivants dès qu'un await (génération PDF)
+  // s'intercale entre eux, car le "geste utilisateur" qui les autorise expire entre-temps.
   const handleMailtoWithAttachments = async () => {
     if (!to.trim()) {
       toast.error("Renseignez un destinataire avant d'ouvrir votre client email.");
@@ -204,16 +207,20 @@ export function EmailComposer({
     }
     setPreparingAttachments(true);
     try {
+      const files: { name: string; blob: Blob }[] = [];
+
       if (attachLetter && application?.coverLetterText) {
-        await downloadCoverLetterPdf(
+        const { blob, fileName } = await coverLetterPdfBlob(
           application.coverLetterText,
           application,
           settings.name || undefined,
         );
+        files.push({ name: fileName, blob });
       }
+
       if (attachCv) {
         if (hasAtsCv && application?.atsCvText) {
-          await downloadGeneratedCvPdf(application.atsCvText, {
+          const { blob, fileName } = await generatedCvPdfBlob(application.atsCvText, {
             applicantName: settings.name || undefined,
             targetPosition: application.position,
             email: settings.email || undefined,
@@ -221,11 +228,28 @@ export function EmailComposer({
             linkedinUrl: settings.linkedinUrl || undefined,
             websiteUrl: settings.websiteUrl || undefined,
           });
+          files.push({ name: fileName, blob });
         } else if (cvFile) {
-          downloadDataUrl(cvFile.dataUrl, cvFile.fileName);
+          files.push({ name: cvFile.fileName, blob: await dataUrlToBlob(cvFile.dataUrl) });
         }
       }
-      toast.info("Pièce(s) téléchargée(s) — glissez-les dans le brouillon qui s'ouvre.");
+
+      if (files.length === 1) {
+        downloadDataUrl(URL.createObjectURL(files[0]!.blob), files[0]!.name);
+      } else if (files.length > 1) {
+        const safeCompany = (application?.company || "candidature")
+          .replace(/[^a-z0-9]+/gi, "-")
+          .toLowerCase();
+        await downloadFilesAsZip(files, `jobee-flow-${safeCompany}-pieces-jointes.zip`);
+      }
+
+      if (files.length > 0) {
+        toast.info(
+          files.length > 1
+            ? "Pièces jointes téléchargées dans une archive ZIP — décompressez-la et glissez les fichiers dans le brouillon qui s'ouvre."
+            : "Pièce jointe téléchargée — glissez-la dans le brouillon qui s'ouvre.",
+        );
+      }
       handleMailto();
     } catch {
       toast.error("Échec de la préparation des pièces jointes.");

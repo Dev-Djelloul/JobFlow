@@ -154,7 +154,7 @@ export async function downloadApplicationDetailPdf(application: Application) {
 }
 
 /** Exporte une lettre de motivation (texte libre, générée ou éditée) en PDF prêt à envoyer. */
-export async function downloadCoverLetterPdf(
+async function buildCoverLetterDoc(
   text: string,
   application: Pick<Application, "company" | "position">,
   applicantName?: string,
@@ -205,7 +205,27 @@ export async function downloadCoverLetterPdf(
   const safeCompany = (application.company || "candidature")
     .replace(/[^a-z0-9]+/gi, "-")
     .toLowerCase();
-  doc.save(`jobee-flow-lettre-${safeCompany}-${stamp()}.pdf`);
+  return { doc, fileName: `jobee-flow-lettre-${safeCompany}-${stamp()}.pdf` };
+}
+
+export async function downloadCoverLetterPdf(
+  text: string,
+  application: Pick<Application, "company" | "position">,
+  applicantName?: string,
+) {
+  const { doc, fileName } = await buildCoverLetterDoc(text, application, applicantName);
+  doc.save(fileName);
+}
+
+/** Génère le PDF de la lettre de motivation sans le télécharger — pour l'assembler avec
+ * d'autres pièces jointes (ex. dans une pièce jointe email) avant un unique téléchargement. */
+export async function coverLetterPdfBlob(
+  text: string,
+  application: Pick<Application, "company" | "position">,
+  applicantName?: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  const { doc, fileName } = await buildCoverLetterDoc(text, application, applicantName);
+  return { blob: doc.output("blob") as Blob, fileName };
 }
 
 /**
@@ -373,18 +393,16 @@ function isSectionHeading(line: string): boolean {
   return letters.length > 0 && letters === letters.toUpperCase();
 }
 
-/** Exporte un CV généré par IA (texte libre structuré en sections) en PDF prêt à envoyer. */
-export async function downloadGeneratedCvPdf(
-  text: string,
-  options: {
-    applicantName?: string | undefined;
-    targetPosition?: string | undefined;
-    email?: string | undefined;
-    phone?: string | undefined;
-    linkedinUrl?: string | undefined;
-    websiteUrl?: string | undefined;
-  } = {},
-) {
+interface GeneratedCvPdfOptions {
+  applicantName?: string | undefined;
+  targetPosition?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  linkedinUrl?: string | undefined;
+  websiteUrl?: string | undefined;
+}
+
+async function buildGeneratedCvDoc(text: string, options: GeneratedCvPdfOptions = {}) {
   const { jsPDF } = await loadPdf();
   const doc = new jsPDF();
   const marginX = 18;
@@ -443,5 +461,21 @@ export async function downloadGeneratedCvPdf(
   }
 
   const safeName = (options.applicantName || "cv-ats").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  doc.save(`jobee-flow-${safeName}-ats-${stamp()}.pdf`);
+  return { doc, fileName: `jobee-flow-${safeName}-ats-${stamp()}.pdf` };
+}
+
+/** Exporte un CV généré par IA (texte libre structuré en sections) en PDF prêt à envoyer. */
+export async function downloadGeneratedCvPdf(text: string, options: GeneratedCvPdfOptions = {}) {
+  const { doc, fileName } = await buildGeneratedCvDoc(text, options);
+  doc.save(fileName);
+}
+
+/** Génère le PDF du CV ATS sans le télécharger — pour l'assembler avec d'autres pièces
+ * jointes (ex. dans un email) avant un unique téléchargement. */
+export async function generatedCvPdfBlob(
+  text: string,
+  options: GeneratedCvPdfOptions = {},
+): Promise<{ blob: Blob; fileName: string }> {
+  const { doc, fileName } = await buildGeneratedCvDoc(text, options);
+  return { blob: doc.output("blob") as Blob, fileName };
 }
