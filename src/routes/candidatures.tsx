@@ -23,6 +23,7 @@ import {
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { AddressLink } from "@/components/common/AddressLink";
+import { SourceLogo } from "@/components/common/SourceLogo";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
@@ -250,7 +251,14 @@ function ApplicationsPage() {
                           <AddressLink address={app.location} />
                         </TableCell>
                         <TableCell className="hidden xl:table-cell">
-                          {sourceLabel(app.source) || "—"}
+                          {app.source ? (
+                            <span className="flex items-center gap-1.5">
+                              <SourceLogo source={app.source} size={16} />
+                              {sourceLabel(app.source)}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell className="hidden whitespace-nowrap sm:table-cell">
                           {formatDate(app.application_date)}

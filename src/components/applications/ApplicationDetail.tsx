@@ -46,6 +46,7 @@ import { suggestTemplateId } from "@/lib/email";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
 import { formatDate } from "@/lib/format";
 import { AddressLink } from "@/components/common/AddressLink";
+import { SourceLogo } from "@/components/common/SourceLogo";
 import { downloadApplicationDetailPdf } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
 import {
@@ -315,12 +316,16 @@ export function ApplicationDetail({
                       href={application.source_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 text-primary hover:underline"
                     >
+                      <SourceLogo source={application.source} size={16} />
                       {sourceLabel(application.source)} <ExternalLink className="size-3" />
                     </a>
                   ) : (
-                    sourceLabel(application.source)
+                    <span className="inline-flex items-center gap-1.5">
+                      <SourceLogo source={application.source} size={16} />
+                      {sourceLabel(application.source)}
+                    </span>
                   )
                 ) : null
               }

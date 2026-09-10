@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
+import { SourceLogo } from "@/components/common/SourceLogo";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { useApplications } from "@/hooks/useApplications";
 import { searchAdzunaOffers } from "@/lib/adzuna";
@@ -361,12 +362,13 @@ function OffresPage() {
               type="button"
               onClick={() => handleSourceChange(opt.value)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                 source === opt.value
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
+              <SourceLogo source={opt.value} size={16} />
               {opt.label}
             </button>
           ))}
@@ -469,6 +471,11 @@ function OffresPage() {
                     onClick={() => handleViewAlert(alert)}
                     className="flex items-center gap-2 text-left text-sm"
                   >
+                    <SourceLogo
+                      source={alert.source}
+                      size={16}
+                      title={SOURCE_OPTIONS.find((o) => o.value === alert.source)?.label}
+                    />
                     <span className="font-medium">{alert.name}</span>
                     {alert.pendingOfferIds.length > 0 ? (
                       <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 py-0.5 text-xs font-semibold text-destructive-foreground">
@@ -574,7 +581,14 @@ function OffresPage() {
                     >
                       <CardContent className="space-y-2 p-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-medium leading-snug">{offer.intitule}</p>
+                          <p className="flex items-start gap-1.5 font-medium leading-snug">
+                            <SourceLogo
+                              source={offer.source}
+                              size={16}
+                              className="mt-0.5 shrink-0"
+                            />
+                            {offer.intitule}
+                          </p>
                           <div className="flex shrink-0 items-center gap-2">
                             <button
                               type="button"

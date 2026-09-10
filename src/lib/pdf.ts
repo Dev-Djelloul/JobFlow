@@ -5,6 +5,8 @@ import {
   sourceLabel,
   STATUS_LABELS,
 } from "@/types/application";
+import type { CvExperience } from "@/types/cv";
+import { experiencePeriodLabel, sortExperiences } from "@/lib/cv";
 import { formatDate } from "@/lib/format";
 
 const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
@@ -204,4 +206,100 @@ export async function downloadCoverLetterPdf(
     .replace(/[^a-z0-9]+/gi, "-")
     .toLowerCase();
   doc.save(`jobee-flow-lettre-${safeCompany}-${stamp()}.pdf`);
+}
+
+/** Exporte le CV (profil + expériences professionnelles) en PDF. */
+export async function downloadCvPdf(
+  experiences: CvExperience[],
+  options: { applicantName?: string; email?: string; cvSummary?: string } = {},
+) {
+  const { jsPDF } = await loadPdf();
+  const doc = new jsPDF();
+  const marginX = 18;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const maxWidth = pageWidth - marginX * 2;
+  let y = 20;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > doc.internal.pageSize.getHeight() - 16) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(47, 79, 158);
+  doc.text(options.applicantName || "Curriculum Vitae", marginX, y);
+  doc.setTextColor(0);
+  y += 7;
+
+  if (options.email) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(options.email, marginX, y);
+    doc.setTextColor(0);
+    y += 8;
+  } else {
+    y += 3;
+  }
+
+  if (options.cvSummary) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Profil", marginX, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const lines = doc.splitTextToSize(options.cvSummary, maxWidth) as string[];
+    ensureSpace(lines.length * 5);
+    doc.text(lines, marginX, y);
+    y += lines.length * 5 + 6;
+  }
+
+  const sorted = sortExperiences(experiences);
+  if (sorted.length > 0) {
+    ensureSpace(10);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Expérience professionnelle", marginX, y);
+    y += 7;
+
+    for (const exp of sorted) {
+      ensureSpace(16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(exp.title || "Poste", marginX, y);
+      y += 5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(90);
+      const meta = [exp.company, exp.location].filter(Boolean).join(" · ");
+      if (meta) {
+        doc.text(meta, marginX, y);
+        y += 4.5;
+      }
+      const period = experiencePeriodLabel(exp);
+      if (period) {
+        doc.setTextColor(140);
+        doc.text(period, marginX, y);
+        y += 5;
+      }
+      doc.setTextColor(0);
+
+      if (exp.description) {
+        doc.setFontSize(9.5);
+        const lines = doc.splitTextToSize(exp.description, maxWidth) as string[];
+        ensureSpace(lines.length * 4.5);
+        doc.text(lines, marginX, y);
+        y += lines.length * 4.5;
+      }
+      y += 6;
+    }
+  }
+
+  const safeName = (options.applicantName || "cv").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  doc.save(`jobee-flow-${safeName}-${stamp()}.pdf`);
 }
