@@ -29,6 +29,16 @@ export const STATUS_DOT_CLASSES: Record<ApplicationStatus, string> = {
   rejected: "bg-destructive",
 };
 
+/** Fond marqué par statut — pour différencier fortement des zones entières (ex. colonnes Kanban). */
+export const STATUS_COLUMN_BG_CLASSES: Record<ApplicationStatus, string> = {
+  to_target: "bg-muted-foreground/10 border-muted-foreground/30",
+  applied: "bg-info/15 border-info/40",
+  interview: "bg-primary/15 border-primary/40",
+  test: "bg-warning/20 border-warning/45",
+  offer: "bg-success/15 border-success/40",
+  rejected: "bg-destructive/10 border-destructive/35",
+};
+
 export function StatusBadge({
   status,
   className,

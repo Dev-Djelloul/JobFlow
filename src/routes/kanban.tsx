@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/select";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
-import { STATUS_DOT_CLASSES, STATUS_TEXT_CLASSES } from "@/components/applications/StatusBadge";
+import {
+  STATUS_COLUMN_BG_CLASSES,
+  STATUS_DOT_CLASSES,
+  STATUS_TEXT_CLASSES,
+} from "@/components/applications/StatusBadge";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { formatDate } from "@/lib/format";
@@ -94,8 +98,9 @@ function KanbanPage() {
                   onDragLeave={() => setOverColumn((c) => (c === status ? null : c))}
                   onDrop={() => drop(status)}
                   className={cn(
-                    "w-72 shrink-0 rounded-xl border border-border bg-surface p-3 transition-colors",
-                    overColumn === status && "border-primary bg-primary/5",
+                    "w-72 shrink-0 rounded-xl border p-3 transition-colors",
+                    STATUS_COLUMN_BG_CLASSES[status],
+                    overColumn === status && "border-primary bg-primary/20",
                   )}
                 >
                   <header className="mb-3 flex items-center justify-between px-1">
