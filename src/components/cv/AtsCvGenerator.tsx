@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useApplications } from "@/hooks/useApplications";
 import { useCv } from "@/hooks/useCv";
 import { useSettings } from "@/hooks/useSettings";
 import { serializeExperiencesForAi } from "@/lib/cv";
@@ -27,6 +35,8 @@ interface Props {
 export function AtsCvGenerator({ open, onOpenChange }: Props) {
   const { settings } = useSettings();
   const { experiences } = useCv();
+  const { applications } = useApplications();
+  const [sourceApplicationId, setSourceApplicationId] = useState("");
   const [targetPosition, setTargetPosition] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -34,6 +44,19 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  const sortedApplications = [...applications].sort((a, b) =>
+    (b.application_date || "").localeCompare(a.application_date || ""),
+  );
+
+  const applyApplication = (id: string) => {
+    setSourceApplicationId(id);
+    const app = applications.find((a) => a.id === id);
+    if (!app) return;
+    setTargetPosition(app.position);
+    setTargetCompany(app.company);
+    setJobDescription(app.notes || "");
+  };
 
   const runGeneration = async () => {
     if (!targetPosition.trim()) {
@@ -101,6 +124,7 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
         if (!o) {
           setText("");
           setError(null);
+          setSourceApplicationId("");
         }
       }}
     >
@@ -119,6 +143,27 @@ export function AtsCvGenerator({ open, onOpenChange }: Props) {
 
         {!text ? (
           <div className="space-y-4">
+            {sortedApplications.length > 0 ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="ats-source-application">Pré-remplir depuis une candidature</Label>
+                <Select value={sourceApplicationId} onValueChange={applyApplication}>
+                  <SelectTrigger id="ats-source-application">
+                    <SelectValue placeholder="Choisir une candidature (facultatif)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortedApplications.map((app) => (
+                      <SelectItem key={app.id} value={app.id}>
+                        {app.position} — {app.company}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Reprend le poste, l'entreprise et la description de l'offre enregistrés sur cette
+                  candidature (fiable pour les offres ajoutées depuis la recherche).
+                </p>
+              </div>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="ats-position">Poste visé *</Label>
