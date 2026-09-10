@@ -143,6 +143,9 @@ export interface UserSettings {
   /** Résumé libre du profil (expérience, compétences, formation) — sert de contexte à la
    * génération de lettres de motivation par IA. */
   cvSummary: string;
+  /** Texte extrait (et éventuellement corrigé) d'un CV PDF importé — contexte supplémentaire
+   * pour la génération de CV optimisé ATS par IA. */
+  cvImportedText: string;
 }
 
 export const FOLLOW_UP_STATUSES = ["todo", "done", "cancelled"] as const;

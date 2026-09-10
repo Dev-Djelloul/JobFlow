@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Briefcase, Building2, Download, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Download,
+  MapPin,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +26,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
+import { AtsCvGenerator } from "@/components/cv/AtsCvGenerator";
 import { CvExperienceForm } from "@/components/cv/CvExperienceForm";
+import { CvImportSection } from "@/components/cv/CvImportSection";
 import { useCv } from "@/hooks/useCv";
 import { useSettings } from "@/hooks/useSettings";
 import { experiencePeriodLabel, sortExperiences } from "@/lib/cv";
@@ -50,6 +61,7 @@ function CvPage() {
   const [editing, setEditing] = useState<CvExperience | null>(null);
   const [toDelete, setToDelete] = useState<CvExperience | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [atsOpen, setAtsOpen] = useState(false);
 
   const sorted = sortExperiences(experiences);
 
@@ -102,7 +114,11 @@ function CvPage() {
       title="Mon CV"
       description="Vos expériences professionnelles, prêtes à être exportées en PDF."
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setAtsOpen(true)}>
+            <Sparkles className="size-4" />
+            <span className="hidden sm:inline">CV optimisé ATS</span>
+          </Button>
           <Button variant="outline" onClick={handleExport} disabled={exporting}>
             <Download className="size-4" />
             <span className="hidden sm:inline">Exporter en PDF</span>
@@ -214,8 +230,12 @@ function CvPage() {
               )}
             </CardContent>
           </Card>
+
+          <CvImportSection />
         </div>
       )}
+
+      <AtsCvGenerator open={atsOpen} onOpenChange={setAtsOpen} />
 
       <CvExperienceForm
         open={formOpen}
