@@ -5,9 +5,9 @@ import type { ApplicationSource } from "@/types/application";
 const SOURCE_LOGO_SRC: Partial<Record<ApplicationSource, string>> = {
   france_travail: "/img/France-Travail-logo.jpg",
   adzuna: "/img/adzuna-logo.svg",
-  linkedin: "/img/LinkedIn-logo.png",
+  linkedin: "/img/linkedin-logo-png.png",
   indeed: "/img/Indeed-logo.png",
-  welcome_to_the_jungle: "/img/WelcomeToTheJungle-logo.png",
+  welcome_to_the_jungle: "/img/welcome-to-the-jungle-logo.png",
 };
 
 export function hasSourceLogo(source?: string): boolean {
