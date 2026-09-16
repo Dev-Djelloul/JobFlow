@@ -19,15 +19,21 @@ génériques ("Madame, Monsieur, je me permets de vous contacter..."), pas de ma
 crochets. Une lettre concrète, qui s'appuie sur le profil fourni et les informations réelles de l'offre. Entre
 250 et 350 mots. Signe simplement avec le prénom fourni s'il est disponible, sinon sans signature nominative.`;
 
+// Limites appliquées manuellement dans le handler plutôt que dans le validateur Zod : un champ
+// trop long y déclenche une erreur "too_big" brute, non interceptée par le try/catch du handler
+// (leçon tirée du même bug sur le département France Travail) — on préfère tronquer proprement.
+const MAX_JOB_CONTEXT_CHARS = 4000;
+const MAX_CV_SUMMARY_CHARS = 4000;
+
 export const generateCoverLetter = createServerFn({ method: "POST" })
   .validator(
     z.object({
       position: z.string().trim().min(1).max(200),
       company: z.string().trim().min(1).max(200),
       /** Description de l'offre ou notes de la candidature — sert de contexte. */
-      jobContext: z.string().trim().max(4000).optional(),
+      jobContext: z.string().trim().max(20000).optional(),
       /** Résumé du profil (expérience, compétences) renseigné dans Paramètres. */
-      cvSummary: z.string().trim().max(4000).optional(),
+      cvSummary: z.string().trim().max(20000).optional(),
       applicantName: z.string().trim().max(120).optional(),
     }),
   )
@@ -49,11 +55,14 @@ export const generateCoverLetter = createServerFn({ method: "POST" })
         };
       }
 
+      const jobContext = data.jobContext?.slice(0, MAX_JOB_CONTEXT_CHARS);
+      const cvSummary = data.cvSummary.slice(0, MAX_CV_SUMMARY_CHARS);
+
       const userPrompt = `Poste visé : ${data.position}
 Entreprise : ${data.company}
-${data.jobContext ? `Contexte de l'offre :\n${data.jobContext}\n` : ""}
+${jobContext ? `Contexte de l'offre :\n${jobContext}\n` : ""}
 Profil du candidat :
-${data.cvSummary}
+${cvSummary}
 ${data.applicantName ? `\nPrénom du candidat : ${data.applicantName}` : ""}
 
 Rédige la lettre de motivation.`;
@@ -117,18 +126,26 @@ optimisé pour être bien parsé par un ATS et pour matcher le vocabulaire de l'
   séparément, avec de vrais liens cliquables. Commence directement par la première section
   (PROFIL) sans rien avant.`;
 
+// Limites appliquées côté handler plutôt que dans le validateur Zod (voir la même remarque sur
+// generateCoverLetter ci-dessus) : au-delà de max(), Zod rejette la requête avant même que le
+// handler ne s'exécute, produisant une erreur brute non gérée plutôt qu'un message propre.
+const MAX_ATS_CV_SUMMARY_CHARS = 4000;
+const MAX_EXPERIENCES_TEXT_CHARS = 8000;
+const MAX_CV_IMPORTED_TEXT_CHARS = 12000;
+const MAX_JOB_DESCRIPTION_CHARS = 6000;
+
 export const generateAtsCv = createServerFn({ method: "POST" })
   .validator(
     z.object({
       applicantName: z.string().trim().max(120).optional(),
-      cvSummary: z.string().trim().max(4000).optional(),
+      cvSummary: z.string().trim().max(20000).optional(),
       /** Texte des expériences professionnelles structurées, déjà mis en forme côté client. */
-      experiencesText: z.string().trim().max(8000).optional(),
+      experiencesText: z.string().trim().max(40000).optional(),
       /** Texte extrait (et éventuellement corrigé) d'un CV PDF existant. */
-      cvImportedText: z.string().trim().max(12000).optional(),
+      cvImportedText: z.string().trim().max(60000).optional(),
       targetPosition: z.string().trim().min(1).max(200),
       targetCompany: z.string().trim().max(200).optional(),
-      jobDescription: z.string().trim().max(6000).optional(),
+      jobDescription: z.string().trim().max(30000).optional(),
     }),
   )
   .handler(async ({ data }): Promise<GenerationResult> => {
@@ -153,14 +170,19 @@ export const generateAtsCv = createServerFn({ method: "POST" })
         };
       }
 
+      const jobDescription = data.jobDescription?.slice(0, MAX_JOB_DESCRIPTION_CHARS);
+      const cvSummary = data.cvSummary?.slice(0, MAX_ATS_CV_SUMMARY_CHARS);
+      const experiencesText = data.experiencesText?.slice(0, MAX_EXPERIENCES_TEXT_CHARS);
+      const cvImportedText = data.cvImportedText?.slice(0, MAX_CV_IMPORTED_TEXT_CHARS);
+
       const userPrompt = `Poste visé : ${data.targetPosition}
 ${data.targetCompany ? `Entreprise : ${data.targetCompany}\n` : ""}${
-        data.jobDescription ? `Description de l'offre :\n${data.jobDescription}\n` : ""
+        jobDescription ? `Description de l'offre :\n${jobDescription}\n` : ""
       }
 ${data.applicantName ? `Nom du candidat : ${data.applicantName}\n` : ""}
-${data.cvSummary ? `Résumé de profil fourni par le candidat :\n${data.cvSummary}\n` : ""}
-${data.experiencesText ? `Expériences professionnelles structurées :\n${data.experiencesText}\n` : ""}
-${data.cvImportedText ? `CV existant du candidat (texte brut) :\n${data.cvImportedText}\n` : ""}
+${cvSummary ? `Résumé de profil fourni par le candidat :\n${cvSummary}\n` : ""}
+${experiencesText ? `Expériences professionnelles structurées :\n${experiencesText}\n` : ""}
+${cvImportedText ? `CV existant du candidat (texte brut) :\n${cvImportedText}\n` : ""}
 
 Rédige le CV optimisé ATS complet.`;
 
