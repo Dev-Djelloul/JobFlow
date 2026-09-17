@@ -46,6 +46,7 @@ const contactSchema = z.object({
   phone: z.string().max(60).default(""),
   job_title: z.string().max(160).default(""),
   linkedin_url: z.string().max(2000).default(""),
+  website_url: z.string().max(2000).default(""),
   notes: z.string().max(10000).default(""),
   company: z.string().max(200).default(""),
   created_at: dateish.default(""),

@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { isValidLinkedInUrl } from "@/lib/contacts";
+import { isValidLinkedInUrl, isValidWebsiteUrl } from "@/lib/contacts";
 import type { Contact, ContactInput } from "@/types/contact";
 
 const schema = z.object({
@@ -27,7 +27,15 @@ const schema = z.object({
   linkedin_url: z
     .string()
     .trim()
-    .refine((v) => v === "" || isValidLinkedInUrl(v), "URL LinkedIn invalide (https://linkedin.com/…)")
+    .refine(
+      (v) => v === "" || isValidLinkedInUrl(v),
+      "URL LinkedIn invalide (https://linkedin.com/…)",
+    )
+    .default(""),
+  website_url: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || isValidWebsiteUrl(v), "URL invalide (https://…)")
     .default(""),
   notes: z.string().max(2000).default(""),
 });
@@ -42,6 +50,7 @@ const emptyValues = (company = ""): FormValues => ({
   email: "",
   phone: "",
   linkedin_url: "",
+  website_url: "",
   notes: "",
 });
 
@@ -81,6 +90,7 @@ export function ContactForm({
             email: contact.email,
             phone: contact.phone,
             linkedin_url: contact.linkedin_url,
+            website_url: contact.website_url,
             notes: contact.notes,
           }
         : emptyValues(defaultCompany),
@@ -153,6 +163,18 @@ export function ContactForm({
               />
               {errors.linkedin_url ? (
                 <p className="text-xs text-destructive">{errors.linkedin_url.message}</p>
+              ) : null}
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="website_url">Site web</Label>
+              <Input
+                id="website_url"
+                placeholder="https://…"
+                {...register("website_url")}
+                aria-invalid={!!errors.website_url}
+              />
+              {errors.website_url ? (
+                <p className="text-xs text-destructive">{errors.website_url.message}</p>
               ) : null}
             </div>
             <div className="space-y-1.5 sm:col-span-2">

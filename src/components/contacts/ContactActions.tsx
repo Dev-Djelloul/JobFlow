@@ -1,7 +1,7 @@
-import { Linkedin, Mail } from "lucide-react";
+import { Globe, Linkedin, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { isValidLinkedInUrl } from "@/lib/contacts";
+import { isValidLinkedInUrl, isValidWebsiteUrl } from "@/lib/contacts";
 import type { Contact } from "@/types/contact";
 
 /** Boutons « Écrire un email » et « Voir LinkedIn » (aucune intégration externe). */
@@ -14,6 +14,7 @@ export function ContactActions({
 }) {
   const hasEmail = !!contact.email.trim();
   const hasLinkedIn = isValidLinkedInUrl(contact.linkedin_url ?? "");
+  const hasWebsite = isValidWebsiteUrl(contact.website_url ?? "");
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -44,6 +45,18 @@ export function ContactActions({
         }}
       >
         <Linkedin className="size-4" /> Voir LinkedIn
+      </Button>
+      <Button
+        size={size}
+        variant="outline"
+        disabled={!hasWebsite}
+        title={hasWebsite ? "Ouvrir le site web" : "Aucune URL de site web valide"}
+        onClick={() => {
+          if (!hasWebsite) return;
+          window.open(contact.website_url.trim(), "_blank", "noopener,noreferrer");
+        }}
+      >
+        <Globe className="size-4" /> Voir le site
       </Button>
     </div>
   );

@@ -15,6 +15,10 @@ const LINKEDIN_RE = /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/.+/i;
 
 export const isValidLinkedInUrl = (value: string) => LINKEDIN_RE.test(value.trim());
 
+const WEBSITE_RE = /^https?:\/\/.+/i;
+
+export const isValidWebsiteUrl = (value: string) => WEBSITE_RE.test(value.trim());
+
 /** Contacts d'une entreprise (par clé normalisée), triés par nom. */
 export function contactsForCompany(contacts: Contact[], key: string): Contact[] {
   return contacts

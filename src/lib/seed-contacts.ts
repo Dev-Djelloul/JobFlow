@@ -17,6 +17,7 @@ const make = (
   linkedin_url: string,
   notes: string,
   daysAgo: number,
+  website_url = "",
 ): Contact => ({
   id,
   first_name,
@@ -26,6 +27,7 @@ const make = (
   email,
   phone,
   linkedin_url,
+  website_url,
   notes,
   created_at: iso(daysAgo),
   updated_at: iso(Math.max(0, daysAgo - 2)),

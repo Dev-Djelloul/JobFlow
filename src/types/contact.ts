@@ -6,6 +6,7 @@ export interface Contact {
   phone: string;
   job_title: string;
   linkedin_url: string;
+  website_url: string;
   notes: string;
   /** Libellé de l'entreprise tel que saisi (le regroupement utilise `companyKey`). */
   company: string;
@@ -22,6 +23,7 @@ export const emptyContactInput = (company = ""): ContactInput => ({
   phone: "",
   job_title: "",
   linkedin_url: "",
+  website_url: "",
   notes: "",
   company,
 });

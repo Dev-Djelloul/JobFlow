@@ -52,6 +52,7 @@ export function normalizeContacts(list: Contact[]): Contact[] {
       phone: c.phone ?? "",
       job_title: c.job_title ?? "",
       linkedin_url: c.linkedin_url ?? "",
+      website_url: c.website_url ?? "",
       notes: c.notes ?? "",
       company: c.company ?? "",
       created_at: c.created_at ?? "",

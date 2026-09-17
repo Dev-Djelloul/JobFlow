@@ -182,6 +182,7 @@ function ContactDetailPage() {
               <Field label="Email" value={contact.email} />
               <Field label="Téléphone" value={contact.phone} />
               <Field label="LinkedIn" value={contact.linkedin_url} />
+              <Field label="Site web" value={contact.website_url} />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Notes</p>

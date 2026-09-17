@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Linkedin, Mail, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
+import { Globe, Linkedin, Mail, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import {
   contactFullName,
   contactLastActivity,
   isValidLinkedInUrl,
+  isValidWebsiteUrl,
   searchContacts,
   sortContacts,
   type ContactSort,
@@ -225,6 +226,11 @@ function ContactsPage() {
                           <Linkedin className="size-3.5" /> Profil LinkedIn
                         </p>
                       ) : null}
+                      {isValidWebsiteUrl(contact.website_url) ? (
+                        <p className="flex items-center gap-2">
+                          <Globe className="size-3.5" /> Site web
+                        </p>
+                      ) : null}
                       <p className="text-xs">
                         Dernière activité :{" "}
                         {formatDate(contactLastActivity(applications, contact)) || "—"}
@@ -247,6 +253,7 @@ function ContactsPage() {
                           <TableHead>Email</TableHead>
                           <TableHead>Téléphone</TableHead>
                           <TableHead>LinkedIn</TableHead>
+                          <TableHead>Site web</TableHead>
                           <TableHead>Dernière activité</TableHead>
                           <TableHead className="w-10">
                             <span className="sr-only">Actions</span>
@@ -282,6 +289,20 @@ function ContactsPage() {
                                   className="inline-flex items-center gap-1 text-primary hover:underline"
                                 >
                                   <Linkedin className="size-3.5" /> Profil
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isValidWebsiteUrl(contact.website_url) ? (
+                                <a
+                                  href={contact.website_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                                >
+                                  <Globe className="size-3.5" /> Site
                                 </a>
                               ) : (
                                 "—"
