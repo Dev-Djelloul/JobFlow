@@ -233,7 +233,7 @@ async function buildCoverLetterDoc(
   const safeCompany = (application.company || "candidature")
     .replace(/[^a-z0-9]+/gi, "-")
     .toLowerCase();
-  return { doc, fileName: `jobee-flow-lettre-${safeCompany}-${stamp()}.pdf` };
+  return { doc, fileName: `job-flow-lettre-${safeCompany}.pdf` };
 }
 
 export async function downloadCoverLetterPdf(
@@ -410,7 +410,7 @@ export async function downloadCvPdf(
   }
 
   const safeName = (options.applicantName || "cv").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  doc.save(`jobee-flow-${safeName}-${stamp()}.pdf`);
+  doc.save(`job-flow-cv-${safeName}.pdf`);
 }
 
 /** Une ligne est considérée comme un titre de section si elle est courte et tout en majuscules. */
@@ -489,7 +489,7 @@ async function buildGeneratedCvDoc(text: string, options: GeneratedCvPdfOptions 
   }
 
   const safeName = (options.applicantName || "cv-ats").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  return { doc, fileName: `jobee-flow-${safeName}-ats-${stamp()}.pdf` };
+  return { doc, fileName: `job-flow-cv-ats-${safeName}.pdf` };
 }
 
 /** Exporte un CV généré par IA (texte libre structuré en sections) en PDF prêt à envoyer. */
