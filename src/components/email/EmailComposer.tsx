@@ -213,7 +213,13 @@ export function EmailComposer({
         const { blob, fileName } = await coverLetterPdfBlob(
           application.coverLetterText,
           application,
-          settings.name || undefined,
+          {
+            applicantName: settings.name || undefined,
+            email: settings.email || undefined,
+            phone: settings.phone || undefined,
+            linkedinUrl: settings.linkedinUrl || undefined,
+            websiteUrl: settings.websiteUrl || undefined,
+          },
         );
         files.push({ name: fileName, blob });
       }

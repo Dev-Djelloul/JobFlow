@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ClipboardCopy, FileText, Save, Sparkles } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ClipboardCopy, FileText, Save, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,12 @@ export function CoverLetterGenerator({ application, open, onOpenChange }: Props)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  const missingContactFields = [
+    !settings.name.trim() && "nom",
+    !settings.email.trim() && "email",
+    !settings.phone.trim() && "téléphone",
+  ].filter((v): v is string => !!v);
 
   const runGeneration = async () => {
     setLoading(true);
@@ -86,7 +93,13 @@ export function CoverLetterGenerator({ application, open, onOpenChange }: Props)
   const handleExportPdf = async () => {
     setExporting(true);
     try {
-      await downloadCoverLetterPdf(text, application, settings.name || undefined);
+      await downloadCoverLetterPdf(text, application, {
+        applicantName: settings.name || undefined,
+        email: settings.email || undefined,
+        phone: settings.phone || undefined,
+        linkedinUrl: settings.linkedinUrl || undefined,
+        websiteUrl: settings.websiteUrl || undefined,
+      });
     } catch {
       toast.error("Échec de l'export PDF");
     } finally {
@@ -116,6 +129,20 @@ export function CoverLetterGenerator({ application, open, onOpenChange }: Props)
             de cette candidature. Relisez-la et ajustez-la avant tout envoi.
           </DialogDescription>
         </DialogHeader>
+
+        {missingContactFields.length > 0 ? (
+          <p className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground dark:text-warning">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            <span>
+              L'en-tête de la lettre exportée n'affichera pas votre{" "}
+              {missingContactFields.join(", ")} — ces informations sont vides dans{" "}
+              <Link to="/parametres" className="underline underline-offset-2">
+                Paramètres
+              </Link>
+              .
+            </span>
+          </p>
+        ) : null}
 
         {error ? (
           <p className="whitespace-pre-wrap rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

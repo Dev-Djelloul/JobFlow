@@ -25,11 +25,13 @@ export function ApplicationDocumentsSection({ application }: { application: Appl
     if (!application.coverLetterText) return;
     setExportingLetter(true);
     try {
-      await downloadCoverLetterPdf(
-        application.coverLetterText,
-        application,
-        settings.name || undefined,
-      );
+      await downloadCoverLetterPdf(application.coverLetterText, application, {
+        applicantName: settings.name || undefined,
+        email: settings.email || undefined,
+        phone: settings.phone || undefined,
+        linkedinUrl: settings.linkedinUrl || undefined,
+        websiteUrl: settings.websiteUrl || undefined,
+      });
     } catch {
       toast.error("Échec de l'export PDF");
     } finally {

@@ -17,7 +17,11 @@ const SYSTEM_PROMPT = `Tu es un rédacteur spécialisé en candidatures pour le 
 Tu rédiges des lettres de motivation professionnelles, sincères et directement utilisables : pas de tournures
 génériques ("Madame, Monsieur, je me permets de vous contacter..."), pas de markdown, pas de placeholders entre
 crochets. Une lettre concrète, qui s'appuie sur le profil fourni et les informations réelles de l'offre. Entre
-250 et 350 mots. Signe simplement avec le prénom fourni s'il est disponible, sinon sans signature nominative.`;
+250 et 350 mots. Signe simplement avec le prénom fourni s'il est disponible, sinon sans signature nominative.
+N'écris JAMAIS de bloc d'en-tête en début de lettre (pas de nom, pas d'adresse, pas de téléphone, pas
+d'email, pas de date, et surtout aucun placeholder entre crochets comme "[Votre adresse]") : l'application
+ajoute déjà ces informations séparément. Commence directement par la formule d'appel ("Madame, Monsieur,")
+ou le corps de la lettre.`;
 
 // Limites appliquées manuellement dans le handler plutôt que dans le validateur Zod : un champ
 // trop long y déclenche une erreur "too_big" brute, non interceptée par le try/catch du handler

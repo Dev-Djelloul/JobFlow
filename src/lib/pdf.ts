@@ -153,11 +153,25 @@ export async function downloadApplicationDetailPdf(application: Application) {
   doc.save(`jobee-flow-${safeCompany}-${stamp()}.pdf`);
 }
 
+export interface CoverLetterPdfOptions {
+  applicantName?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  linkedinUrl?: string | undefined;
+  websiteUrl?: string | undefined;
+}
+
+/** Une ligne entièrement encadrée de crochets — un placeholder que l'IA aurait laissé malgré
+ * la consigne (ex. "[Votre adresse]") — à retirer plutôt qu'à imprimer tel quel. */
+function isBracketPlaceholder(line: string): boolean {
+  return /^\[.+\]$/.test(line.trim());
+}
+
 /** Exporte une lettre de motivation (texte libre, générée ou éditée) en PDF prêt à envoyer. */
 async function buildCoverLetterDoc(
   text: string,
   application: Pick<Application, "company" | "position">,
-  applicantName?: string,
+  options: CoverLetterPdfOptions = {},
 ) {
   const { jsPDF } = await loadPdf();
   const doc = new jsPDF();
@@ -166,11 +180,16 @@ async function buildCoverLetterDoc(
   const maxWidth = pageWidth - marginX * 2;
   let y = 22;
 
-  if (applicantName) {
-    doc.setFontSize(11);
-    doc.text(applicantName, marginX, y);
-    y += 6;
-  }
+  // L'en-tête (nom, email, téléphone, liens) est dessiné par l'application, jamais par l'IA —
+  // même logique et même garde-fou que pour le CV : cohérent, fiable, avec de vrais liens
+  // cliquables plutôt que des placeholders entre crochets laissés par le modèle.
+  y = drawCvHeader(doc, marginX, y, {
+    applicantName: options.applicantName,
+    email: options.email,
+    phone: options.phone,
+    linkedinUrl: options.linkedinUrl,
+    websiteUrl: options.websiteUrl,
+  });
   doc.setFontSize(9);
   doc.setTextColor(120);
   doc.text(formatDate(new Date().toISOString()) || "", marginX, y);
@@ -188,9 +207,18 @@ async function buildCoverLetterDoc(
   y += 12;
 
   doc.setFontSize(10.5);
-  const paragraphs = text.split(/\n{2,}/);
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) =>
+      p
+        .split("\n")
+        .filter((line) => !isBracketPlaceholder(line))
+        .join("\n")
+        .trim(),
+    )
+    .filter(Boolean);
   for (const paragraph of paragraphs) {
-    const lines = doc.splitTextToSize(paragraph.trim(), maxWidth) as string[];
+    const lines = doc.splitTextToSize(paragraph, maxWidth) as string[];
     for (const line of lines) {
       if (y > doc.internal.pageSize.getHeight() - 20) {
         doc.addPage();
@@ -211,9 +239,9 @@ async function buildCoverLetterDoc(
 export async function downloadCoverLetterPdf(
   text: string,
   application: Pick<Application, "company" | "position">,
-  applicantName?: string,
+  options: CoverLetterPdfOptions = {},
 ) {
-  const { doc, fileName } = await buildCoverLetterDoc(text, application, applicantName);
+  const { doc, fileName } = await buildCoverLetterDoc(text, application, options);
   doc.save(fileName);
 }
 
@@ -222,9 +250,9 @@ export async function downloadCoverLetterPdf(
 export async function coverLetterPdfBlob(
   text: string,
   application: Pick<Application, "company" | "position">,
-  applicantName?: string,
+  options: CoverLetterPdfOptions = {},
 ): Promise<{ blob: Blob; fileName: string }> {
-  const { doc, fileName } = await buildCoverLetterDoc(text, application, applicantName);
+  const { doc, fileName } = await buildCoverLetterDoc(text, application, options);
   return { blob: doc.output("blob") as Blob, fileName };
 }
 
