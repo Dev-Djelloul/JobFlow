@@ -1,4 +1,4 @@
-import type { Application, FollowUp } from "@/types/application";
+import type { Application, ApplicationStatus, FollowUp } from "@/types/application";
 import type { Contact } from "@/types/contact";
 import { companyKey } from "./companies";
 import { addDaysKey, todayKey } from "./format";
@@ -54,6 +54,32 @@ export interface ActionItem {
   application: Application;
   followUp: FollowUp | null;
   contact: Contact | null;
+}
+
+/**
+ * Prochaine action et échéance par défaut suggérées à chaque changement de statut — c'est
+ * ce qui alimente désormais la page Actions même quand l'utilisateur ne remplit pas
+ * "Prochaine action" à la main. "rejected" n'a pas de suite logique (candidature close).
+ */
+const DEFAULT_ACTION_BY_STATUS: Record<
+  Exclude<ApplicationStatus, "rejected">,
+  { title: string; daysFromNow: number }
+> = {
+  to_target: { title: "Envoyer la candidature", daysFromNow: 2 },
+  applied: { title: "Relancer si pas de réponse", daysFromNow: 7 },
+  interview: { title: "Préparer l'entretien", daysFromNow: 1 },
+  test: { title: "Réaliser le test / cas pratique", daysFromNow: 3 },
+  offer: { title: "Répondre à l'offre", daysFromNow: 3 },
+};
+
+/** Suggestion par défaut pour un statut donné, ou `null` (statut "rejected"). */
+export function defaultActionForStatus(
+  status: ApplicationStatus,
+  today = todayKey(),
+): { title: string; date: string } | null {
+  if (status === "rejected") return null;
+  const { title, daysFromNow } = DEFAULT_ACTION_BY_STATUS[status];
+  return { title, date: addDaysKey(today, daysFromNow) };
 }
 
 /** Classe une date (yyyy-mm-dd) dans l'une des quatre catégories. */
@@ -142,7 +168,8 @@ export function buildActions(
   }
 
   return items.sort(
-    (a, b) => (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31") ||
+    (a, b) =>
+      (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31") ||
       a.application.company.localeCompare(b.application.company, "fr"),
   );
 }

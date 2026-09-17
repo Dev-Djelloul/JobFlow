@@ -5,6 +5,7 @@ import type {
   ApplicationStatus,
   FollowUpInput,
 } from "@/types/application";
+import { defaultActionForStatus } from "@/lib/actions";
 import { loadApplications, saveApplications } from "@/lib/storage";
 import { ApplicationsContext, useApplications } from "./applications-context";
 
@@ -35,8 +36,13 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
   const createApplication = useCallback(
     (input: ApplicationInput) => {
       const now = new Date().toISOString();
+      // Sans prochaine action saisie à la main, on en suggère une par défaut selon le statut
+      // choisi — sinon rien n'apparaît dans la page Actions avant la première relance manuelle.
+      const suggested = input.next_action ? null : defaultActionForStatus(input.status);
       const app: Application = {
         ...input,
+        next_action: suggested ? suggested.title : input.next_action,
+        follow_up_date: suggested ? suggested.date : input.follow_up_date,
         id: newId(),
         status_history: [{ status: input.status, date: now.slice(0, 10) }],
         follow_ups: [],
@@ -62,9 +68,18 @@ export function ApplicationsProvider({ children }: { children: ReactNode }) {
           // dernière entrée au lieu de s'empiler — l'historique reste lisible, une entrée par
           // jour où le statut a réellement bougé.
           const sameDayAsLast = lastEntry?.date === today;
+          // Un changement de statut sans prochaine action explicitement fournie dans le même
+          // appel suggère automatiquement la suite logique — sinon seule une saisie manuelle
+          // dans "Prochaine action" faisait apparaître quoi que ce soit dans la page Actions.
+          const suggested =
+            statusChanged && !("next_action" in input)
+              ? defaultActionForStatus(input.status!, today)
+              : null;
           return {
             ...a,
             ...input,
+            next_action: suggested ? suggested.title : (input.next_action ?? a.next_action),
+            follow_up_date: suggested ? suggested.date : (input.follow_up_date ?? a.follow_up_date),
             status_history: statusChanged
               ? sameDayAsLast
                 ? [...a.status_history.slice(0, -1), { status: input.status!, date: today }]
