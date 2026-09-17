@@ -3,12 +3,12 @@ export const STATUSES = ["to_target", "applied", "interview", "test", "offer", "
 export type ApplicationStatus = (typeof STATUSES)[number];
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  to_target: "À cibler",
+  to_target: "Postuler",
   applied: "Candidature envoyée",
-  interview: "Entretien",
+  interview: "Entretien professionnel",
   test: "Test / Cas pratique",
-  offer: "Offre",
-  rejected: "Refusée",
+  offer: "Offre d'embauche",
+  rejected: "Candidature refusée",
 };
 
 export const CONTRACT_TYPES = [
