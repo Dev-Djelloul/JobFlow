@@ -189,7 +189,9 @@ async function loadAllFormationActivites(): Promise<ActiviteOption[]> {
 
 /**
  * Recherche dans le référentiel des domaines de formation FORM14 par mot-clé du libellé —
- * laisse choisir un domaine sans avoir à connaître son code à l'avance.
+ * laisse choisir un domaine sans avoir à connaître son code à l'avance. Un domaine correspond
+ * dès qu'un seul des mots tapés apparaît dans son libellé (les domaines correspondant à
+ * plusieurs mots à la fois remontent en premier).
  */
 export const searchFormationActivities = createServerFn({ method: "GET" })
   .validator(z.object({ filtre: z.string().trim().max(100).optional() }))
@@ -201,11 +203,15 @@ export const searchFormationActivities = createServerFn({ method: "GET" })
         const words = stripAccents(data.filtre)
           .split(/\s+/)
           .filter((w) => w.length > 1);
-        const options = all.filter((a) => {
-          const label = stripAccents(a.label);
-          return words.every((w) => label.includes(w));
-        });
-        return { ok: true, options };
+        const scored = all
+          .map((a) => {
+            const label = stripAccents(a.label);
+            const score = words.filter((w) => label.includes(w)).length;
+            return { option: a, score };
+          })
+          .filter((s) => s.score > 0)
+          .sort((a, b) => b.score - a.score || a.option.label.localeCompare(b.option.label));
+        return { ok: true, options: scored.map((s) => s.option) };
       } catch (e) {
         return {
           ok: false,
@@ -215,3 +221,20 @@ export const searchFormationActivities = createServerFn({ method: "GET" })
       }
     },
   );
+
+/** Liste complète du référentiel des domaines de formation FORM14, triée par libellé — pour un
+ * panneau récapitulatif affichant tous les domaines disponibles. */
+export const listAllFormationActivities = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ ok: boolean; options: ActiviteOption[]; error?: string }> => {
+    try {
+      const all = await loadAllFormationActivites();
+      return { ok: true, options: [...all].sort((a, b) => a.label.localeCompare(b.label)) };
+    } catch (e) {
+      return {
+        ok: false,
+        options: [],
+        error: e instanceof Error ? e.message : "Erreur inconnue.",
+      };
+    }
+  },
+);
