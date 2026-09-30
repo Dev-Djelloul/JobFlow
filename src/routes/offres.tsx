@@ -20,7 +20,9 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
 import { SourceLogo } from "@/components/common/SourceLogo";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
+import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
+import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { searchAdzunaOffers } from "@/lib/adzuna";
 import { searchFranceTravailOffers } from "@/lib/france-travail";
 import { looksRemote, mapContractType, type JobOffer, type OfferSource } from "@/lib/job-offers";
@@ -106,6 +108,7 @@ function mapExperienceLevel(exige: string): string {
 
 function OffresPage() {
   const { applications, createApplication } = useApplications();
+  const dialogs = useApplicationDialogs();
   const [source, setSource] = useState<OfferSource>("france_travail");
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
@@ -687,13 +690,35 @@ function OffresPage() {
         initialValues={prefill ?? undefined}
         onSubmit={(values) => {
           try {
-            createApplication(values);
+            const created = createApplication(values);
             setFormOpen(false);
-            toast.success("Candidature ajoutée depuis l'offre");
+            toast.success("Candidature ajoutée depuis l'offre", {
+              action: {
+                label: "Voir la candidature",
+                onClick: () => dialogs.openDetail(created),
+              },
+            });
           } catch {
             toast.error("Une erreur est survenue, réessayez.");
           }
         }}
+      />
+
+      <ApplicationForm
+        open={dialogs.formOpen}
+        onOpenChange={dialogs.setFormOpen}
+        application={dialogs.editing}
+        onSubmit={dialogs.submit}
+      />
+      <ApplicationDetail
+        application={dialogs.selected}
+        open={dialogs.detailOpen}
+        onOpenChange={dialogs.setDetailOpen}
+        onEdit={dialogs.openEdit}
+        onDelete={dialogs.remove}
+        onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
+        onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
       />
     </AppLayout>
   );
