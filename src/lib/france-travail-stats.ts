@@ -98,7 +98,7 @@ export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
         body: JSON.stringify({
           codeTypeTerritoire: data.codeTypeTerritoire,
           codeTerritoire: data.codeTerritoire,
-          codeTypeActivite: "ROME",
+          codeTypeActivite: "FORM14",
           codeActivite: data.codeActivite.toUpperCase(),
           codeTypePeriode: "TRIMESTRE",
           codeTypeNomenclature: "ACCESEMP",
