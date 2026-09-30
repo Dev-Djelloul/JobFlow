@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Merge, ShieldCheck } from "lucide-react";
+import { Gauge, Merge, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,10 @@ import { ContactForm } from "@/components/contacts/ContactForm";
 import { useApplications } from "@/hooks/useApplications";
 import { useContacts } from "@/hooks/useContacts";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
+import { useCv } from "@/hooks/useCv";
+import { useSettings } from "@/hooks/useSettings";
 import {
+  averageSuccessScore,
   buildQualityReport,
   ISSUE_SEVERITIES,
   ISSUE_TYPE_LABELS,
@@ -73,6 +76,8 @@ function DataQualityPage() {
   const { applications, loading, replaceAllApplications } = useApplications();
   const { contacts, replaceAllContacts, updateContact } = useContacts();
   const dialogs = useApplicationDialogs();
+  const { settings } = useSettings();
+  const { experiences, cvFile } = useCv();
 
   const [severity, setSeverity] = useState<IssueSeverity | "all">("all");
   const [ignored, setIgnored] = useState<string[]>([]);
@@ -80,9 +85,19 @@ function DataQualityPage() {
   const [mergeName, setMergeName] = useState("");
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
+  const successProfile = useMemo(
+    () => ({ cvSummary: settings.cvSummary, experiences, hasCvFile: !!cvFile }),
+    [settings.cvSummary, experiences, cvFile],
+  );
+
   const report = useMemo(
-    () => buildQualityReport(applications, contacts, undefined, ignored),
-    [applications, contacts, ignored],
+    () => buildQualityReport(applications, contacts, undefined, ignored, successProfile),
+    [applications, contacts, ignored, successProfile],
+  );
+
+  const avgSuccess = useMemo(
+    () => averageSuccessScore(applications, successProfile),
+    [applications, successProfile],
   );
 
   const coverage = sourceCoverage(applications);
@@ -148,7 +163,7 @@ function DataQualityPage() {
           <LoadingState />
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <Card className="rounded-xl shadow-none">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -159,6 +174,21 @@ function DataQualityPage() {
                   <p className="text-2xl font-semibold tabular-nums">{report.score}/100</p>
                   <p className="text-xs text-muted-foreground">
                     {report.checked} enregistrement(s) contrôlé(s)
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl shadow-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                    <Gauge className="size-3.5" /> Chance de succès moyenne
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold tabular-nums">
+                    {avgSuccess === null ? "—" : `${avgSuccess}%`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Sur les candidatures actives (hors refusées)
                   </p>
                 </CardContent>
               </Card>

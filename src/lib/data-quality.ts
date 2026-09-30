@@ -5,6 +5,7 @@ import { contactCompanyKey } from "./contacts";
 import { findSimilarCompanies, type CompanyDuplicateSuggestion } from "./company-merge";
 import { isValidUrl } from "./csv-import";
 import { daysBetween, todayKey } from "./format";
+import { computeSuccessScore, type SuccessScoreProfile } from "./success-score";
 
 /**
  * Data Quality Center : moteur PUR. Aucune écriture, aucune persistance,
@@ -37,7 +38,8 @@ export type IssueType =
   | "contact_without_reach"
   | "duplicate_company"
   | "invalid_url"
-  | "inconsistent_data";
+  | "inconsistent_data"
+  | "low_success_score";
 
 export const ISSUE_TYPE_LABELS: Record<IssueType, string> = {
   missing_company: "Entreprise manquante",
@@ -51,6 +53,7 @@ export const ISSUE_TYPE_LABELS: Record<IssueType, string> = {
   duplicate_company: "Entreprise potentiellement dupliquée",
   invalid_url: "URL invalide",
   inconsistent_data: "Données incohérentes",
+  low_success_score: "Chance de succès faible",
 };
 
 /** Action corrective proposée par l'interface. */
@@ -84,11 +87,19 @@ export interface QualityReport {
   checked: number;
 }
 
+/** Score en dessous duquel une candidature active est signalée comme anomalie. */
+const LOW_SUCCESS_SCORE_THRESHOLD = 40;
+
 export function buildQualityReport(
   applications: Application[],
   contacts: Contact[] = [],
   today = todayKey(),
   ignoredDuplicateIds: string[] = [],
+  /** Optionnel : quand fourni, ajoute une anomalie pour les candidatures actives dont la
+   * "chance de succès" (voir lib/success-score) est faible — relie qualité des données et
+   * indicateur de succès, puisque les facteurs qui pèsent le plus sur ce score (dossier
+   * incomplet, pas de suivi, pas de contact) sont eux-mêmes des problèmes de qualité. */
+  successProfile?: SuccessScoreProfile,
 ): QualityReport {
   const issues: QualityIssue[] = [];
   const contactKeys = new Set(contacts.map((c) => contactCompanyKey(c)).filter(Boolean));
@@ -170,11 +181,7 @@ export function buildQualityReport(
       });
     }
     const key = companyKey(app.company);
-    if (
-      (app.contact_ids ?? []).length === 0 &&
-      key &&
-      contactKeys.has(key)
-    ) {
+    if ((app.contact_ids ?? []).length === 0 && key && contactKeys.has(key)) {
       add({
         id: `${app.id}-contact-link`,
         type: "missing_contact_link",
@@ -208,11 +215,7 @@ export function buildQualityReport(
     if (app.application_date && daysBetween(app.application_date, today) < 0) {
       inconsistencies.push("la date de candidature est dans le futur");
     }
-    if (
-      app.follow_up_date &&
-      app.application_date &&
-      app.follow_up_date < app.application_date
-    ) {
+    if (app.follow_up_date && app.application_date && app.follow_up_date < app.application_date) {
       inconsistencies.push("la date de relance précède la candidature");
     }
     if (app.status !== "to_target" && (app.status_history ?? []).length === 0) {
@@ -229,6 +232,26 @@ export function buildQualityReport(
         fix,
       });
     }
+
+    if (successProfile && ACTIVE.has(app.status)) {
+      const score = computeSuccessScore(app, successProfile, today);
+      if (score.percent !== null && score.percent < LOW_SUCCESS_SCORE_THRESHOLD) {
+        const weakest = [...score.factors].sort(
+          (a, b) => a.points / (a.maxPoints || 1) - b.points / (b.maxPoints || 1),
+        )[0];
+        add({
+          id: `${app.id}-low-success`,
+          type: "low_success_score",
+          severity: "major",
+          title: "Chance de succès faible",
+          description: `${label} n'a que ${score.percent}% de chance de succès estimée${
+            weakest ? ` — le point le plus faible : ${weakest.label.toLowerCase()}` : ""
+          }.`,
+          applicationId: app.id,
+          fix,
+        });
+      }
+    }
   }
 
   for (const contact of contacts) {
@@ -238,7 +261,8 @@ export function buildQualityReport(
         type: "contact_without_reach",
         severity: "major",
         title: "Contact sans email ni téléphone",
-        description: `${contact.first_name} ${contact.last_name}`.trim() + " n'a aucun moyen de contact.",
+        description:
+          `${contact.first_name} ${contact.last_name}`.trim() + " n'a aucun moyen de contact.",
         contactId: contact.id,
         fix: { kind: "edit_contact", label: "Compléter le contact" },
       });
@@ -281,4 +305,18 @@ export function buildQualityReport(
 export function sourceCoverage(applications: Application[]): number | null {
   if (applications.length === 0) return null;
   return applications.filter((a) => !!a.source).length / applications.length;
+}
+
+/** Chance de succès moyenne (0-100) sur les candidatures actives, `null` s'il n'y en a aucune. */
+export function averageSuccessScore(
+  applications: Application[],
+  profile: SuccessScoreProfile,
+  today = todayKey(),
+): number | null {
+  const scores = applications
+    .filter((a) => ACTIVE.has(a.status))
+    .map((a) => computeSuccessScore(a, profile, today).percent)
+    .filter((p): p is number => p !== null);
+  if (scores.length === 0) return null;
+  return Math.round(scores.reduce((sum, p) => sum + p, 0) / scores.length);
 }
