@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
+import { DataEmploiCard } from "@/components/common/DataEmploiCard";
 import {
   fetchAccesEmploiStats,
   listAllFormationActivities,
@@ -404,6 +405,8 @@ function MarcheEmploiPage() {
               description={`Ex : « informatique » pour ${departmentName(departement) || departement || "votre département"}, afin de voir le taux de retour à l'emploi après une formation.`}
             />
           ) : null}
+
+          <DataEmploiCard />
         </div>
       </div>
     </AppLayout>
