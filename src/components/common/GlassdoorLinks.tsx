@@ -33,7 +33,10 @@ export function GlassdoorLinks({ companyName }: { companyName: string }) {
   return (
     <Card className="rounded-xl shadow-none">
       <CardHeader>
-        <CardTitle className="text-base">Transparence entreprise</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <img src="/img/Glassdoor-image.jpeg" alt="" aria-hidden className="h-5 w-auto rounded" />
+          Transparence entreprise
+        </CardTitle>
         <CardDescription>
           Avis employés, salaires et retours d'entretien pour {companyName}, via Glassdoor.
         </CardDescription>
