@@ -20,15 +20,14 @@ const GLASSDOOR_TOPICS = [
   },
 ];
 
-/** Glassdoor n'a plus d'API publique et ne permet pas de lien direct vers les onglets Avis /
- * Salaires / Entretiens d'une entreprise sans son identifiant interne — impossible à obtenir
- * sans intégration payante. On propose donc une recherche pré-remplie plutôt que d'inventer
- * des données : l'utilisateur atterrit sur la fiche entreprise Glassdoor, qui regroupe ces trois
- * onglets, en un clic. */
+/** Glassdoor n'a plus d'API publique et sa fiche entreprise (qui regroupe les onglets Avis /
+ * Salaires / Entretiens) nécessite un identifiant interne dans l'URL (ex. EI_IE1363581) —
+ * impossible à connaître à l'avance sans intégration payante. On pointe donc vers la recherche
+ * d'entreprise de Glassdoor pré-remplie avec le nom, qui liste l'entreprise en un clic. */
 export function GlassdoorLinks({ companyName }: { companyName: string }) {
-  const searchUrl = `https://www.glassdoor.fr/Recherche/resultats.htm?keyword=${encodeURIComponent(
+  const searchUrl = `https://www.glassdoor.fr/Explore/browse-companies.htm?employerName=${encodeURIComponent(
     companyName,
-  )}`;
+  )}&page=1`;
 
   return (
     <Card className="rounded-xl shadow-none">
