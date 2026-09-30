@@ -26,13 +26,16 @@ const SECTION_HEADING_RE = /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ' /-]{3,60}$/;
 export function MarkdownLite({ text }: { text: string }) {
   const blocks = text.split(/\n{2,}/).filter((b) => b.trim());
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {blocks.map((block, blockIndex) => {
         const lines = block.split("\n").filter((l) => l.trim());
 
         if (lines.length === 1 && SECTION_HEADING_RE.test(lines[0]!.trim())) {
           return (
-            <p key={blockIndex} className="pt-1 text-sm font-semibold text-primary first:pt-0">
+            <p
+              key={blockIndex}
+              className="mt-3 border-b border-border pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground first:mt-0"
+            >
               {lines[0]!.trim()}
             </p>
           );
@@ -49,7 +52,7 @@ export function MarkdownLite({ text }: { text: string }) {
                     <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
                       {num}
                     </span>
-                    <span>{renderInline(rest)}</span>
+                    <span className="leading-relaxed">{renderInline(rest)}</span>
                   </li>
                 );
               })}
@@ -63,7 +66,9 @@ export function MarkdownLite({ text }: { text: string }) {
               {lines.map((line, i) => (
                 <li key={i} className="flex gap-2">
                   <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                  <span>{renderInline(line.trim().replace(BULLET_ITEM_RE, ""))}</span>
+                  <span className="leading-relaxed">
+                    {renderInline(line.trim().replace(BULLET_ITEM_RE, ""))}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -71,7 +76,7 @@ export function MarkdownLite({ text }: { text: string }) {
         }
 
         return (
-          <p key={blockIndex}>
+          <p key={blockIndex} className="leading-relaxed">
             {lines.map((line, i) => (
               <Fragment key={i}>
                 {i > 0 ? <br /> : null}
