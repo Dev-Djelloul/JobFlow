@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Gauge, Merge, ShieldCheck } from "lucide-react";
+import { Merge, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -179,8 +179,8 @@ function DataQualityPage() {
               </Card>
               <Card className="rounded-xl shadow-none">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                    <Gauge className="size-3.5" /> Chance de succès moyenne
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Chance de succès
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

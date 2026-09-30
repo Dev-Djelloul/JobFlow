@@ -12,7 +12,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, Briefcase, CheckCircle2, Clock, Trophy, Users, XCircle } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  CheckCircle2,
+  Clock,
+  Gauge,
+  Trophy,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +36,10 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { SourceLogo } from "@/components/common/SourceLogo";
 import { useApplications } from "@/hooks/useApplications";
+import { useCv } from "@/hooks/useCv";
+import { useSettings } from "@/hooks/useSettings";
 import { companyKey } from "@/lib/companies";
+import { averageSuccessScore } from "@/lib/data-quality";
 import {
   DEFAULT_FILTERS,
   PERIOD_OPTIONS,
@@ -103,6 +115,8 @@ function KpiCard({
 
 function AnalyticsPage() {
   const { applications, loading } = useApplications();
+  const { settings } = useSettings();
+  const { experiences, cvFile } = useCv();
   const [filters, setFilters] = useState<AnalyticsFilters>(DEFAULT_FILTERS);
   const [grouping, setGrouping] = useState<TimeGrouping>("month");
 
@@ -121,6 +135,15 @@ function AnalyticsPage() {
   );
 
   const kpis = useMemo(() => computeKpis(filtered), [filtered]);
+  const avgSuccess = useMemo(
+    () =>
+      averageSuccessScore(filtered, {
+        cvSummary: settings.cvSummary,
+        experiences,
+        hasCvFile: !!cvFile,
+      }),
+    [filtered, settings.cvSummary, experiences, cvFile],
+  );
   const funnel = useMemo(() => buildFunnel(filtered), [filtered]);
   const breakdown = useMemo(() => statusBreakdown(filtered), [filtered]);
   const series = useMemo(() => buildTimeSeries(filtered, grouping), [filtered, grouping]);
@@ -246,7 +269,7 @@ function AnalyticsPage() {
           ) : (
             <>
               {/* KPIs */}
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
                 <KpiCard label="Total candidatures" value={kpis.total} icon={Briefcase} />
                 <KpiCard
                   label="Actives"
@@ -266,6 +289,12 @@ function AnalyticsPage() {
                   value={kpis.rejected}
                   icon={XCircle}
                   tone="bg-destructive/10 text-destructive"
+                />
+                <KpiCard
+                  label="Chance de succès"
+                  value={avgSuccess === null ? "—" : `${avgSuccess} %`}
+                  icon={Gauge}
+                  tone="bg-success/12 text-success"
                 />
               </div>
 

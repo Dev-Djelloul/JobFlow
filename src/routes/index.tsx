@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, Briefcase, CheckCircle2, Percent, Send, Trophy, Users } from "lucide-react";
+import { Bell, Briefcase, CheckCircle2, Gauge, Percent, Send, Trophy, Users } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -18,7 +18,10 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { useApplications } from "@/hooks/useApplications";
 import { useContacts } from "@/hooks/useContacts";
+import { useCv } from "@/hooks/useCv";
+import { useSettings } from "@/hooks/useSettings";
 import { buildTimeline, computeStats, latestApplications } from "@/lib/stats";
+import { averageSuccessScore } from "@/lib/data-quality";
 import {
   ACTION_BUCKET_DOTS,
   ACTION_BUCKET_LABELS,
@@ -93,6 +96,13 @@ function DashboardPage() {
   const timeline = buildTimeline(applications);
   const latest = latestApplications(applications);
   const { contacts } = useContacts();
+  const { settings } = useSettings();
+  const { experiences, cvFile } = useCv();
+  const avgSuccess = averageSuccessScore(applications, {
+    cvSummary: settings.cvSummary,
+    experiences,
+    hasCvFile: !!cvFile,
+  });
   const allActions = buildActions(applications, contacts);
   const actionSummary = summarizeActions(allActions);
   const nextActions = allActions.slice(0, 5);
@@ -138,7 +148,7 @@ function DashboardPage() {
         />
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             <StatCard label="Total candidatures" value={stats.total} icon={Briefcase} />
             <StatCard label="Envoyées" value={stats.sent} icon={Send} />
             <StatCard
@@ -153,6 +163,12 @@ function DashboardPage() {
               value={`${stats.responseRate} %`}
               icon={Percent}
               tone="info"
+            />
+            <StatCard
+              label="Chance de succès"
+              value={avgSuccess === null ? "—" : `${avgSuccess} %`}
+              icon={Gauge}
+              tone="success"
             />
           </div>
 
