@@ -3,7 +3,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/profile/UserAvatar";
 import { useSettings } from "@/hooks/useSettings";
-import { AVATAR_PRESETS, fileToAvatarDataUrl, presetClassName, initialsFromName } from "@/lib/avatars";
+import {
+  AVATAR_PRESETS,
+  fileToAvatarDataUrl,
+  presetClassName,
+  initialsFromName,
+} from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 /** Choix d'une photo de profil (import local) ou d'un avatar prédéfini. */
@@ -40,7 +45,7 @@ export function AvatarSection() {
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             className="sr-only"
             onChange={(e) => void handleFile(e.target.files?.[0])}
           />
@@ -57,9 +62,7 @@ export function AvatarSection() {
 
       <div>
         <p className="text-sm font-medium">Avatar prédéfini</p>
-        <p className="text-sm text-muted-foreground">
-          Utilisé quand aucune photo n'est importée.
-        </p>
+        <p className="text-sm text-muted-foreground">Utilisé quand aucune photo n'est importée.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {AVATAR_PRESETS.map((preset) => {
             const active = settings.avatarPreset === preset.id;

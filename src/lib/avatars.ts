@@ -42,21 +42,42 @@ export function initialsFromName(name?: string): string {
 
 export const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024;
 
+/** HEIC/HEIF (format par défaut des photos iPhone) : ni Chrome ni Firefox ne savent le décoder
+ * via <img>, contrairement à Safari — il faut d'abord le convertir en JPEG côté client. Détecté
+ * par extension car ces fichiers arrivent souvent avec un `file.type` vide selon l'OS/navigateur. */
+function isHeic(file: File): boolean {
+  return /\.hei[cf]$/i.test(file.name) || file.type === "image/heic" || file.type === "image/heif";
+}
+
 /**
  * Lit un fichier image, le recadre au centre et le redimensionne en carré
  * (`size` px) pour limiter la taille stockée dans localStorage.
  */
-export function fileToAvatarDataUrl(file: File, size = 256): Promise<string> {
+export async function fileToAvatarDataUrl(file: File, size = 256): Promise<string> {
+  // Certains navigateurs/OS laissent `file.type` vide pour un JPG/PNG valide (droits, fichier
+  // renommé, métadonnées manquantes) : on ne bloque que les types explicitement non-image.
+  if (file.type && !file.type.startsWith("image/") && !isHeic(file)) {
+    throw new Error("Le fichier doit être une image.");
+  }
+  if (file.size > MAX_AVATAR_FILE_SIZE) {
+    throw new Error("L'image ne doit pas dépasser 5 Mo.");
+  }
+
+  let source: File | Blob = file;
+  if (isHeic(file)) {
+    try {
+      const { default: heic2any } = await import("heic2any");
+      const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+      source = Array.isArray(converted) ? converted[0]! : converted;
+    } catch {
+      throw new Error(
+        "Impossible de convertir cette photo HEIC — essayez de l'exporter en JPG depuis votre appareil.",
+      );
+    }
+  }
+
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("Le fichier doit être une image."));
-      return;
-    }
-    if (file.size > MAX_AVATAR_FILE_SIZE) {
-      reject(new Error("L'image ne doit pas dépasser 5 Mo."));
-      return;
-    }
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(source);
     const img = new Image();
     img.onload = () => {
       try {
