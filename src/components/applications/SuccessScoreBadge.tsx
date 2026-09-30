@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { Gauge, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MarkdownLite } from "@/components/common/MarkdownLite";
 import { computeSuccessScore } from "@/lib/success-score";
 import { estimateSuccessChance } from "@/lib/openrouter";
@@ -18,7 +24,8 @@ function colorClasses(percent: number): string {
 }
 
 /** Badge "chance de succès" (0-100 %) calculé par heuristique locale (voir lib/success-score) —
- * cliquable pour voir le détail des facteurs qui composent le chiffre. */
+ * cliquable pour ouvrir le détail des facteurs dans une fenêtre centrée (plutôt qu'un popover
+ * ancré, qui pouvait sortir de l'écran selon la position du badge dans un tableau/Kanban). */
 export function SuccessScoreBadge({
   application,
   size = "default",
@@ -28,6 +35,7 @@ export function SuccessScoreBadge({
 }) {
   const { settings } = useSettings();
   const { experiences, cvFile } = useCv();
+  const [open, setOpen] = useState(false);
   const [aiEstimate, setAiEstimate] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -81,75 +89,77 @@ export function SuccessScoreBadge({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "inline-flex w-fit items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80",
-            colorClasses(score.percent),
-            size === "sm" && "px-1.5 py-0",
-          )}
-          title="Chance de succès estimée — cliquer pour le détail"
-        >
-          <Gauge className="size-3" /> {score.percent}%
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        collisionPadding={16}
-        className="max-h-[70vh] w-80 overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className={cn(
+          "inline-flex w-fit items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80",
+          colorClasses(score.percent),
+          size === "sm" && "px-1.5 py-0",
+        )}
+        title="Chance de succès estimée — cliquer pour le détail"
       >
-        <p className="text-sm font-semibold">Chance de succès — {score.percent}%</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Score heuristique local, calculé à partir des données de cette candidature (pas d'IA).
-        </p>
-        <ul className="mt-3 space-y-2.5">
-          {score.factors.map((f) => (
-            <li key={f.label}>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium">{f.label}</span>
-                <span className="tabular-nums text-muted-foreground">
-                  {f.points}/{f.maxPoints}
-                </span>
-              </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${f.maxPoints > 0 ? (f.points / f.maxPoints) * 100 : 0}%` }}
-                />
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{f.detail}</p>
-            </li>
-          ))}
-        </ul>
+        <Gauge className="size-3" /> {score.percent}%
+      </button>
 
-        <div className="mt-3 border-t pt-3">
-          {aiEstimate ? (
-            <div className="text-xs">
-              <MarkdownLite text={aiEstimate} />
-            </div>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                void runAiEstimate();
-              }}
-              disabled={aiLoading}
-            >
-              <Sparkles className="size-3.5" />
-              {aiLoading ? "Estimation en cours…" : "Obtenir aussi un avis IA (en complément)"}
-            </Button>
-          )}
-          {aiError ? <p className="mt-2 text-xs text-destructive">{aiError}</p> : null}
-        </div>
-      </PopoverContent>
-    </Popover>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          className="max-h-[85vh] overflow-y-auto sm:max-w-md"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DialogHeader>
+            <DialogTitle>Chance de succès — {score.percent}%</DialogTitle>
+            <DialogDescription>
+              Score heuristique local, calculé à partir des données de cette candidature (pas d'IA).
+            </DialogDescription>
+          </DialogHeader>
+
+          <ul className="space-y-2.5">
+            {score.factors.map((f) => (
+              <li key={f.label}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">{f.label}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {f.points}/{f.maxPoints}
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${f.maxPoints > 0 ? (f.points / f.maxPoints) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{f.detail}</p>
+              </li>
+            ))}
+          </ul>
+
+          <div className="border-t pt-3">
+            {aiEstimate ? (
+              <div className="text-xs">
+                <MarkdownLite text={aiEstimate} />
+              </div>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => void runAiEstimate()}
+                disabled={aiLoading}
+              >
+                <Sparkles className="size-3.5" />
+                {aiLoading ? "Estimation en cours…" : "Obtenir aussi un avis IA (en complément)"}
+              </Button>
+            )}
+            {aiError ? <p className="mt-2 text-xs text-destructive">{aiError}</p> : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
