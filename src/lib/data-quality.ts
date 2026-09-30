@@ -88,7 +88,7 @@ export interface QualityReport {
 }
 
 /** Score en dessous duquel une candidature active est signalée comme anomalie. */
-const LOW_SUCCESS_SCORE_THRESHOLD = 40;
+const LOW_SUCCESS_SCORE_THRESHOLD = 50;
 
 export function buildQualityReport(
   applications: Application[],
