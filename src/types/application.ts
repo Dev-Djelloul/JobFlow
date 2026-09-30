@@ -158,6 +158,9 @@ export interface UserSettings {
   /** Texte extrait (et éventuellement corrigé) d'un CV PDF importé — contexte supplémentaire
    * pour la génération de CV optimisé ATS par IA. */
   cvImportedText: string;
+  /** Notifications système (Notification API du navigateur) pour les nouvelles offres détectées
+   * par les alertes emploi — actives uniquement tant que JobFlow tourne dans un onglet. */
+  desktopNotifications: boolean;
 }
 
 export const FOLLOW_UP_STATUSES = ["todo", "done", "cancelled"] as const;

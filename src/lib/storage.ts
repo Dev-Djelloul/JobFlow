@@ -26,6 +26,7 @@ export const defaultSettings: UserSettings = {
   sidebarCollapsed: false,
   cvSummary: "",
   cvImportedText: "",
+  desktopNotifications: false,
 };
 
 const isBrowser = () => typeof window !== "undefined";

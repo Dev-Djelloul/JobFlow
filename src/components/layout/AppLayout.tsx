@@ -26,6 +26,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { UserAvatar } from "@/components/profile/UserAvatar";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { QuickAddApplication } from "@/components/common/QuickAddApplication";
+import { JobAlertsNotifier } from "@/components/common/JobAlertsNotifier";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -241,6 +242,7 @@ export function AppLayout({
       </div>
 
       <QuickAddApplication />
+      <JobAlertsNotifier />
     </div>
   );
 }

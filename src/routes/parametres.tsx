@@ -51,9 +51,24 @@ export const Route = createFileRoute("/parametres")({
   component: SettingsPage,
 });
 
+function useNotificationPermission() {
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPermission("unsupported");
+      return;
+    }
+    setPermission(Notification.permission);
+  }, []);
+
+  return { permission, setPermission };
+}
+
 function SettingsPage() {
   const { settings, updateSettings, hydrated } = useSettings();
   const { resetDemoData } = useApplications();
+  const { permission, setPermission } = useNotificationPermission();
   const [name, setName] = useState(settings.name);
   const [email, setEmail] = useState(settings.email);
   const [phone, setPhone] = useState(settings.phone);
@@ -264,6 +279,53 @@ function SettingsPage() {
                   <SelectItem value="kanban">Kanban</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base">Notifications</CardTitle>
+            <CardDescription>
+              Alertes emploi France Travail et Adzuna — notification système dès qu'une nouvelle
+              offre est détectée, tant que JobFlow tourne dans un onglet (aucun serveur : pas de
+              notification une fois l'onglet ou l'ordinateur fermé).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Notifications bureau</p>
+                <p className="text-sm text-muted-foreground">
+                  {permission === "unsupported"
+                    ? "Non pris en charge par ce navigateur."
+                    : permission === "denied"
+                      ? "Bloquées par le navigateur — à réactiver manuellement dans ses réglages de site."
+                      : "Prévenir des nouvelles offres correspondant à vos alertes (page Offres)."}
+                </p>
+              </div>
+              <Switch
+                checked={settings.desktopNotifications && permission === "granted"}
+                disabled={permission === "unsupported" || permission === "denied"}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    updateSettings({ desktopNotifications: false });
+                    return;
+                  }
+                  if (typeof window === "undefined" || !("Notification" in window)) return;
+                  void Notification.requestPermission().then((result) => {
+                    setPermission(result);
+                    if (result === "granted") {
+                      updateSettings({ desktopNotifications: true });
+                      new Notification("JobFlow", {
+                        body: "Notifications activées — vous serez prévenu des nouvelles offres.",
+                        icon: "/icons/icon-192.png",
+                      });
+                    }
+                  });
+                }}
+                aria-label="Notifications bureau"
+              />
             </div>
           </CardContent>
         </Card>
