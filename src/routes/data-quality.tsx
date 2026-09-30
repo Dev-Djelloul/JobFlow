@@ -109,6 +109,11 @@ function DataQualityPage() {
       if (app) dialogs.openEdit(app);
       return;
     }
+    if (issue.fix.kind === "view_application") {
+      const app = applications.find((a) => a.id === issue.applicationId);
+      if (app) dialogs.openDetail(app);
+      return;
+    }
     if (issue.fix.kind === "edit_contact") {
       const contact = contacts.find((c) => c.id === issue.contactId);
       if (contact) setEditingContact(contact);

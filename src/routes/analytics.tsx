@@ -35,6 +35,7 @@ import {
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { SourceLogo } from "@/components/common/SourceLogo";
+import { SuccessFactorsCard } from "@/components/applications/SuccessFactorsCard";
 import { useApplications } from "@/hooks/useApplications";
 import { useCv } from "@/hooks/useCv";
 import { useSettings } from "@/hooks/useSettings";
@@ -135,14 +136,13 @@ function AnalyticsPage() {
   );
 
   const kpis = useMemo(() => computeKpis(filtered), [filtered]);
+  const successProfile = useMemo(
+    () => ({ cvSummary: settings.cvSummary, experiences, hasCvFile: !!cvFile }),
+    [settings.cvSummary, experiences, cvFile],
+  );
   const avgSuccess = useMemo(
-    () =>
-      averageSuccessScore(filtered, {
-        cvSummary: settings.cvSummary,
-        experiences,
-        hasCvFile: !!cvFile,
-      }),
-    [filtered, settings.cvSummary, experiences, cvFile],
+    () => averageSuccessScore(filtered, successProfile),
+    [filtered, successProfile],
   );
   const funnel = useMemo(() => buildFunnel(filtered), [filtered]);
   const breakdown = useMemo(() => statusBreakdown(filtered), [filtered]);
@@ -297,6 +297,8 @@ function AnalyticsPage() {
                   tone="bg-success/12 text-success"
                 />
               </div>
+
+              <SuccessFactorsCard applications={filtered} profile={successProfile} />
 
               <div className="grid gap-4 lg:grid-cols-2">
                 {/* Funnel */}

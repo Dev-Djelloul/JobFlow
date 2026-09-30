@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
+import { SuccessFactorsCard } from "@/components/applications/SuccessFactorsCard";
 import { useApplications } from "@/hooks/useApplications";
 import { useContacts } from "@/hooks/useContacts";
 import { useCv } from "@/hooks/useCv";
@@ -98,11 +99,8 @@ function DashboardPage() {
   const { contacts } = useContacts();
   const { settings } = useSettings();
   const { experiences, cvFile } = useCv();
-  const avgSuccess = averageSuccessScore(applications, {
-    cvSummary: settings.cvSummary,
-    experiences,
-    hasCvFile: !!cvFile,
-  });
+  const successProfile = { cvSummary: settings.cvSummary, experiences, hasCvFile: !!cvFile };
+  const avgSuccess = averageSuccessScore(applications, successProfile);
   const allActions = buildActions(applications, contacts);
   const actionSummary = summarizeActions(allActions);
   const nextActions = allActions.slice(0, 5);
@@ -249,6 +247,8 @@ function DashboardPage() {
               ))}
             </CardContent>
           </Card>
+
+          <SuccessFactorsCard applications={applications} profile={successProfile} />
 
           <Card className="rounded-xl shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">

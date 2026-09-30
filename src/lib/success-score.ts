@@ -193,3 +193,43 @@ export function computeSuccessScore(
 
   return { percent, factors };
 }
+
+export interface AggregateSuccessFactor {
+  label: string;
+  /** Moyenne des points obtenus sur ce facteur, arrondie. */
+  avgPoints: number;
+  maxPoints: number;
+}
+
+/**
+ * Moyenne, facteur par facteur, du score de succès sur un ensemble de candidatures actives —
+ * sert à expliquer *pourquoi* le score moyen est ce qu'il est (quel facteur pèse le plus dans
+ * le résultat global), plutôt que d'afficher un seul chiffre sans justification.
+ */
+export function aggregateSuccessFactors(
+  applications: Application[],
+  profile: SuccessScoreProfile,
+  today?: string,
+): AggregateSuccessFactor[] {
+  const perApp = applications
+    .filter((a) => a.status !== "rejected")
+    .map((a) => computeSuccessScore(a, profile, today))
+    .filter((s) => s.percent !== null);
+
+  if (perApp.length === 0) return [];
+
+  const byLabel = new Map<string, { sum: number; maxPoints: number }>();
+  for (const score of perApp) {
+    for (const factor of score.factors) {
+      const entry = byLabel.get(factor.label) ?? { sum: 0, maxPoints: factor.maxPoints };
+      entry.sum += factor.points;
+      byLabel.set(factor.label, entry);
+    }
+  }
+
+  return [...byLabel.entries()].map(([label, { sum, maxPoints }]) => ({
+    label,
+    avgPoints: Math.round(sum / perApp.length),
+    maxPoints,
+  }));
+}

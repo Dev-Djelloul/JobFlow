@@ -59,6 +59,9 @@ export const ISSUE_TYPE_LABELS: Record<IssueType, string> = {
 /** Action corrective proposée par l'interface. */
 export type QualityFix =
   | { kind: "edit_application"; label: string }
+  /** Ouvre la fiche complète plutôt que le formulaire d'édition — pour les anomalies dont la
+   * correction (associer un contact, consulter le détail) ne se fait pas dans ce formulaire. */
+  | { kind: "view_application"; label: string }
   | { kind: "edit_contact"; label: string }
   | { kind: "merge_company"; label: string }
   | { kind: "none" };
@@ -190,7 +193,7 @@ export function buildQualityReport(
         description: `Un contact existe pour ${app.company} mais n'est pas rattaché à ${label}.`,
         applicationId: app.id,
         companyKey: key,
-        fix: { kind: "edit_application", label: "Associer le contact" },
+        fix: { kind: "view_application", label: "Associer le contact" },
       });
     }
     for (const [field, value, name] of [
@@ -248,7 +251,7 @@ export function buildQualityReport(
             weakest ? ` — le point le plus faible : ${weakest.label.toLowerCase()}` : ""
           }.`,
           applicationId: app.id,
-          fix,
+          fix: { kind: "view_application", label: "Voir la candidature" },
         });
       }
     }
