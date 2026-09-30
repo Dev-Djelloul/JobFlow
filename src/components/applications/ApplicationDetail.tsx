@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Bot,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -44,6 +45,8 @@ import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
 import { CoverLetterGenerator } from "./CoverLetterGenerator";
 import { JobAssistantChat } from "./JobAssistantChat";
+import { JobSheetGenerator } from "./JobSheetGenerator";
+import { MarkdownLite } from "@/components/common/MarkdownLite";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationDocumentsSection } from "./ApplicationDocumentsSection";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
@@ -133,6 +136,7 @@ export function ApplicationDetail({
   const [emailOpen, setEmailOpen] = useState(false);
   const [coverLetterOpen, setCoverLetterOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [jobSheetOpen, setJobSheetOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
 
   const navIndex = application
@@ -268,6 +272,9 @@ export function ApplicationDetail({
             <Button size="sm" variant="outline" onClick={() => setAssistantOpen(true)}>
               <Bot className="size-4" /> Assistant IA
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setJobSheetOpen(true)}>
+              <BookOpen className="size-4" /> Fiche métier
+            </Button>
             <Button size="sm" onClick={() => onEdit(application)}>
               <Pencil className="size-4" /> Modifier
             </Button>
@@ -354,6 +361,20 @@ export function ApplicationDetail({
             </p>
           </div>
 
+          {application.jobSheetText ? (
+            <>
+              <Separator />
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Fiche métier
+                </p>
+                <div className="mt-1.5 text-sm">
+                  <MarkdownLite text={application.jobSheetText} />
+                </div>
+              </div>
+            </>
+          ) : null}
+
           <Separator />
 
           <ApplicationDocumentsSection application={application} />
@@ -420,6 +441,12 @@ export function ApplicationDetail({
         application={application}
         open={assistantOpen}
         onOpenChange={setAssistantOpen}
+      />
+
+      <JobSheetGenerator
+        application={application}
+        open={jobSheetOpen}
+        onOpenChange={setJobSheetOpen}
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

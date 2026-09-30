@@ -123,6 +123,8 @@ export interface Application {
   coverLetterText?: string;
   /** CV optimisé ATS associé à cette candidature (texte libre, explicitement enregistré). */
   atsCvText?: string;
+  /** Fiche métier générée pour cette candidature (définition, compétences, accès à l'emploi…). */
+  jobSheetText?: string;
   created_at: string;
   updated_at: string;
 }

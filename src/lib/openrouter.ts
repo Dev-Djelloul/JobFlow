@@ -319,3 +319,83 @@ ${cvSummary ? `Profil du candidat :\n${cvSummary}` : "(Aucun résumé de profil 
       return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
     }
   });
+
+const JOB_SHEET_SYSTEM_PROMPT = `Tu es un expert du marché de l'emploi français, spécialisé dans la rédaction de fiches
+métier dans le style du ROME (Répertoire Opérationnel des Métiers et des Emplois) de France Travail. À partir de
+l'intitulé de poste et de la description de l'offre fournis, rédige une fiche métier synthétique et concrète,
+structurée en sections, chacune sur sa propre ligne en MAJUSCULES suivie d'un saut de ligne :
+DÉFINITION (2-3 phrases sur le métier en général, pas seulement cette offre), COMPÉTENCES REQUISES (liste
+numérotée : savoir-faire et savoirs attendus), CONDITIONS D'ACCÈS (diplômes, formations, expérience généralement
+demandés pour ce métier), CONTEXTE DE TRAVAIL (environnement, horaires, déplacements typiques), MOBILITÉ /
+ÉVOLUTION (métiers proches ou évolutions possibles, en liste numérotée). Tu peux utiliser **gras** pour les termes
+clés et des listes numérotées "1. ", jamais de titres markdown (#) ni de tableaux. Reste général sur le métier
+(comme une vraie fiche ROME), tout en tenant compte du contexte de l'offre donnée pour l'illustrer.`;
+
+const MAX_JOB_SHEET_DESCRIPTION_CHARS = 8000;
+
+export const generateJobSheet = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      position: z.string().trim().min(1).max(200),
+      company: z.string().trim().max(200).optional(),
+      /** Description de l'offre / notes de la candidature — sert de contexte. */
+      jobDescription: z.string().trim().max(20000).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<GenerationResult> => {
+    try {
+      const apiKey = process.env["OPENROUTER_API_KEY"];
+      if (!apiKey) {
+        return {
+          ok: false,
+          error:
+            "Génération IA non configurée : variable OPENROUTER_API_KEY manquante sur le Worker.",
+        };
+      }
+
+      const jobDescription = data.jobDescription?.slice(0, MAX_JOB_SHEET_DESCRIPTION_CHARS);
+
+      const userPrompt = `Intitulé de poste : ${data.position}
+${data.company ? `Entreprise (contexte, pas le sujet de la fiche) : ${data.company}\n` : ""}${
+        jobDescription ? `Description de l'offre :\n${jobDescription}\n` : ""
+      }
+Rédige la fiche métier.`;
+
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://jobflow.digitalblueskye.com",
+          "X-Title": "JobFlow",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: JOB_SHEET_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.4,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        return {
+          ok: false,
+          error: `Génération échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+        };
+      }
+
+      const json = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = json.choices?.[0]?.message?.content?.trim();
+      if (!text) {
+        return { ok: false, error: "La réponse du modèle était vide." };
+      }
+      return { ok: true, text };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
+    }
+  });
