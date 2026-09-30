@@ -96,7 +96,12 @@ export function SuccessScoreBadge({
           <Gauge className="size-3" /> {score.percent}%
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent
+        align="end"
+        collisionPadding={16}
+        className="max-h-[70vh] w-80 overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <p className="text-sm font-semibold">Chance de succès — {score.percent}%</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Score heuristique local, calculé à partir des données de cette candidature (pas d'IA).
