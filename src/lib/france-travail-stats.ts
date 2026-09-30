@@ -74,8 +74,9 @@ export interface AccesEmploiStatsResult {
 
 /**
  * Statistiques France Travail — taux d'accès à l'emploi à 6 mois des sortants de formation,
- * par métier (code ROME) et territoire, sur les derniers trimestres disponibles. Exécuté
- * côté serveur uniquement (identifiants Worker, pas d'appel CORS direct côté client).
+ * par domaine de formation (code FORM14) et territoire, sur les derniers trimestres
+ * disponibles. Exécuté côté serveur uniquement (identifiants Worker, pas d'appel CORS direct
+ * côté client).
  */
 export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
   .validator(
@@ -111,7 +112,7 @@ export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
           periods: [],
           error:
             res.status === 404
-              ? `Aucune donnée pour ce code ROME / territoire (vérifiez le code métier « ${data.codeActivite} »).`
+              ? `Aucune donnée pour ce domaine de formation / territoire (vérifiez le code « ${data.codeActivite} »).`
               : `Statistiques France Travail échouées (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
         };
       }
@@ -138,3 +139,54 @@ export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
       };
     }
   });
+
+interface RawActivite {
+  codeActivite?: string;
+  libelleActivite?: string;
+}
+
+export interface ActiviteOption {
+  code: string;
+  label: string;
+}
+
+/**
+ * Recherche dans le référentiel des domaines de formation FORM14 (nom, code) — utilisé pour
+ * laisser choisir un métier/domaine par mot-clé plutôt que d'exiger de connaître le code à
+ * l'avance.
+ */
+export const searchFormationActivities = createServerFn({ method: "GET" })
+  .validator(z.object({ filtre: z.string().trim().max(100).optional() }))
+  .handler(
+    async ({ data }): Promise<{ ok: boolean; options: ActiviteOption[]; error?: string }> => {
+      try {
+        const token = await getStatsAccessToken();
+        const url = new URL(
+          "https://api.francetravail.io/partenaire/stats-entrees-sorties-formations/v1/referentiel/activites/FORM14",
+        );
+        if (data.filtre) url.searchParams.set("filtreActivite", data.filtre);
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          return {
+            ok: false,
+            options: [],
+            error: `Référentiel des domaines de formation échoué (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+          };
+        }
+        const json = (await res.json()) as { activites?: RawActivite[] };
+        const options = (json.activites ?? [])
+          .filter((a): a is Required<RawActivite> => !!a.codeActivite && !!a.libelleActivite)
+          .map((a) => ({ code: a.codeActivite, label: a.libelleActivite }));
+        return { ok: true, options };
+      } catch (e) {
+        return {
+          ok: false,
+          options: [],
+          error: e instanceof Error ? e.message : "Erreur inconnue.",
+        };
+      }
+    },
+  );

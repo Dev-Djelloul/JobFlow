@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -15,8 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
-import { fetchAccesEmploiStats, type AccesEmploiPeriod } from "@/lib/france-travail-stats";
-import { ROME_SUGGESTIONS } from "@/lib/rome-codes";
+import {
+  fetchAccesEmploiStats,
+  searchFormationActivities,
+  type AccesEmploiPeriod,
+  type ActiviteOption,
+} from "@/lib/france-travail-stats";
 import { departmentName } from "@/lib/french-departments";
 
 export const Route = createFileRoute("/marche-emploi")({
@@ -26,15 +30,53 @@ export const Route = createFileRoute("/marche-emploi")({
       {
         name: "description",
         content:
-          "Statistiques officielles France Travail : taux d'accès à l'emploi à 6 mois des sortants de formation, par métier et département.",
+          "Statistiques officielles France Travail : taux d'accès à l'emploi à 6 mois des sortants de formation, par domaine de formation et département.",
       },
     ],
   }),
   component: MarcheEmploiPage,
 });
 
+function useActiviteSearch(query: string) {
+  const [options, setOptions] = useState<ActiviteOption[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setOptions([]);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(() => {
+      void searchFormationActivities({ data: { filtre: query.trim() } })
+        .then((res) => {
+          if (cancelled) return;
+          setOptions(res.ok ? res.options.slice(0, 12) : []);
+        })
+        .catch(() => {
+          if (!cancelled) setOptions([]);
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  return { options, searching };
+}
+
 function MarcheEmploiPage() {
-  const [romeCode, setRomeCode] = useState(ROME_SUGGESTIONS[0]!.code);
+  const [activiteQuery, setActiviteQuery] = useState("");
+  const [selected, setSelected] = useState<ActiviteOption | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { options, searching } = useActiviteSearch(activiteQuery);
+  const boxRef = useRef<HTMLDivElement>(null);
+
   const [departement, setDepartement] = useState("75");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,11 +85,19 @@ function MarcheEmploiPage() {
     periods: AccesEmploiPeriod[];
   } | null>(null);
 
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setShowSuggestions(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
   const deptValid = /^(2[ab]|\d{1,3})$/i.test(departement.trim());
 
   async function runSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!romeCode.trim() || !deptValid) return;
+    if (!selected || !deptValid) return;
     setLoading(true);
     setError(null);
     try {
@@ -55,14 +105,14 @@ function MarcheEmploiPage() {
         data: {
           codeTypeTerritoire: "DEP",
           codeTerritoire: departement.trim(),
-          codeActivite: romeCode.trim(),
+          codeActivite: selected.code,
         },
       });
       if (!res.ok) {
         setError(res.error ?? "Erreur inconnue.");
         setResult(null);
       } else if (res.periods.length === 0) {
-        setError("Aucune donnée disponible pour ce métier et ce territoire.");
+        setError("Aucune donnée disponible pour ce domaine de formation et ce territoire.");
         setResult(null);
       } else {
         setResult({ territoireLabel: res.territoireLabel, periods: res.periods });
@@ -94,7 +144,7 @@ function MarcheEmploiPage() {
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
               Ces chiffres viennent directement de France Travail : parmi les demandeurs d'emploi
-              sortis d'une formation sur un métier donné, quelle part a retrouvé un emploi dans les
+              sortis d'une formation sur un domaine donné, quelle part a retrouvé un emploi dans les
               6 mois — trimestre par trimestre, sur le département choisi.
             </p>
 
@@ -102,36 +152,53 @@ function MarcheEmploiPage() {
               onSubmit={(e) => void runSearch(e)}
               className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
             >
-              <div className="flex flex-col gap-1">
-                <label htmlFor="rome-select" className="text-xs font-medium text-muted-foreground">
-                  Métier
-                </label>
-                <select
-                  id="rome-select"
-                  value={romeCode}
-                  onChange={(e) => setRomeCode(e.target.value)}
-                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs sm:w-72"
+              <div ref={boxRef} className="relative flex flex-col gap-1">
+                <label
+                  htmlFor="activite-search"
+                  className="text-xs font-medium text-muted-foreground"
                 >
-                  {ROME_SUGGESTIONS.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="rome-code" className="text-xs font-medium text-muted-foreground">
-                  Code ROME
+                  Domaine de formation
                 </label>
                 <Input
-                  id="rome-code"
-                  value={romeCode}
-                  onChange={(e) => setRomeCode(e.target.value.toUpperCase())}
-                  className="sm:w-28"
-                  maxLength={8}
-                  aria-label="Code ROME"
+                  id="activite-search"
+                  value={activiteQuery}
+                  onChange={(e) => {
+                    setActiviteQuery(e.target.value);
+                    setSelected(null);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Ex : informatique, digital, gestion de projet…"
+                  className="sm:w-80"
+                  aria-label="Rechercher un domaine de formation"
                 />
+                {showSuggestions && activiteQuery.trim().length >= 2 ? (
+                  <div className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg sm:w-80">
+                    {searching ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">Recherche…</p>
+                    ) : options.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        Aucun domaine trouvé pour « {activiteQuery} ».
+                      </p>
+                    ) : (
+                      options.map((opt) => (
+                        <button
+                          key={opt.code}
+                          type="button"
+                          onClick={() => {
+                            setSelected(opt);
+                            setActiviteQuery(opt.label);
+                            setShowSuggestions(false);
+                          }}
+                          className="block w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                        >
+                          {opt.label}
+                          <span className="ml-1.5 text-xs text-muted-foreground">({opt.code})</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-col gap-1">
@@ -148,7 +215,7 @@ function MarcheEmploiPage() {
                 />
               </div>
 
-              <Button type="submit" disabled={loading || !deptValid || !romeCode.trim()}>
+              <Button type="submit" disabled={loading || !deptValid || !selected}>
                 <Search className="size-4" />
                 {loading ? "Recherche…" : "Rechercher"}
               </Button>
@@ -159,16 +226,11 @@ function MarcheEmploiPage() {
                 Indiquez un code département (ex : 75, 92, 2A), pas un nom de ville.
               </p>
             ) : null}
-
-            <a
-              href="https://candidat.francetravail.fr/metierscope"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex w-fit items-center gap-1.5 text-xs text-primary hover:underline"
-            >
-              Trouver le code ROME d'un métier sur MétierScope (France Travail)
-              <ExternalLink className="size-3" />
-            </a>
+            {activiteQuery.trim() && !selected ? (
+              <p className="text-xs text-muted-foreground">
+                Choisissez un domaine dans la liste proposée.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -246,8 +308,8 @@ function MarcheEmploiPage() {
 
         {!result && !error && !loading ? (
           <EmptyState
-            title="Choisissez un métier et un département"
-            description={`Exemple : ${departmentName(departement) || departement || "votre département"} pour voir le taux de retour à l'emploi après une formation.`}
+            title="Recherchez un domaine de formation"
+            description={`Ex : « informatique » pour ${departmentName(departement) || departement || "votre département"}, afin de voir le taux de retour à l'emploi après une formation.`}
           />
         ) : null}
       </div>
