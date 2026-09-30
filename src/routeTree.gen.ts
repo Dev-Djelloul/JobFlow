@@ -16,6 +16,7 @@ import { Route as CandidaturesRouteImport } from './routes/candidatures'
 import { Route as DataQualityRouteImport } from './routes/data-quality'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as MarcheEmploiRouteImport } from './routes/marche-emploi'
 import { Route as MetierScopeRouteImport } from './routes/metier-scope'
 import { Route as MonCvRouteImport } from './routes/mon-cv'
 import { Route as OffresRouteImport } from './routes/offres'
@@ -58,6 +59,11 @@ const EmailsRoute = EmailsRouteImport.update({
 const IntelligenceRoute = IntelligenceRouteImport.update({
   id: '/intelligence',
   path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarcheEmploiRoute = MarcheEmploiRouteImport.update({
+  id: '/marche-emploi',
+  path: '/marche-emploi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MetierScopeRoute = MetierScopeRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
+  '/marche-emploi': typeof MarcheEmploiRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
+  '/marche-emploi': typeof MarcheEmploiRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
+  '/marche-emploi': typeof MarcheEmploiRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
+    | '/marche-emploi'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
+    | '/marche-emploi'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
+    | '/marche-emploi'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   DataQualityRoute: typeof DataQualityRoute
   EmailsRoute: typeof EmailsRoute
   IntelligenceRoute: typeof IntelligenceRoute
+  MarcheEmploiRoute: typeof MarcheEmploiRoute
   MetierScopeRoute: typeof MetierScopeRoute
   MonCvRoute: typeof MonCvRoute
   OffresRoute: typeof OffresRoute
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marche-emploi': {
+      id: '/marche-emploi'
+      path: '/marche-emploi'
+      fullPath: '/marche-emploi'
+      preLoaderRoute: typeof MarcheEmploiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/metier-scope': {
@@ -343,6 +363,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataQualityRoute: DataQualityRoute,
   EmailsRoute: EmailsRoute,
   IntelligenceRoute: IntelligenceRoute,
+  MarcheEmploiRoute: MarcheEmploiRoute,
   MetierScopeRoute: MetierScopeRoute,
   MonCvRoute: MonCvRoute,
   OffresRoute: OffresRoute,
