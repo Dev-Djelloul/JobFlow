@@ -17,7 +17,11 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/applications/StatusBadge";
 import { SuccessFactorsCard } from "@/components/applications/SuccessFactorsCard";
+import { KanbanBoard } from "@/components/applications/KanbanBoard";
+import { ApplicationForm } from "@/components/applications/ApplicationForm";
+import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
+import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { useContacts } from "@/hooks/useContacts";
 import { useCv } from "@/hooks/useCv";
 import { useSettings } from "@/hooks/useSettings";
@@ -93,6 +97,7 @@ function StatCard({
 
 function DashboardPage() {
   const { applications, loading } = useApplications();
+  const dialogs = useApplicationDialogs();
   const stats = computeStats(applications);
   const timeline = buildTimeline(applications);
   const latest = latestApplications(applications);
@@ -223,6 +228,15 @@ function DashboardPage() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base">Vue Kanban</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <KanbanBoard applications={applications} dialogs={dialogs} />
             </CardContent>
           </Card>
 
@@ -430,6 +444,29 @@ function DashboardPage() {
           </div>
         </div>
       )}
+
+      <ApplicationForm
+        open={dialogs.formOpen}
+        onOpenChange={dialogs.setFormOpen}
+        application={dialogs.editing}
+        onSubmit={dialogs.submit}
+      />
+      <ApplicationDetail
+        application={dialogs.selected}
+        open={dialogs.detailOpen}
+        onOpenChange={dialogs.setDetailOpen}
+        onEdit={dialogs.openEdit}
+        onDelete={dialogs.remove}
+        onStatusChange={dialogs.setStatus}
+        onToggleFavorite={dialogs.toggleFavorite}
+        onRemoveStatusHistoryEntry={dialogs.removeStatusHistoryEntry}
+        navigationList={
+          dialogs.selected
+            ? applications.filter((a) => a.status === dialogs.selected!.status)
+            : undefined
+        }
+        onNavigate={dialogs.openDetail}
+      />
     </AppLayout>
   );
 }

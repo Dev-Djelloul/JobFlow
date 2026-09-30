@@ -16,7 +16,6 @@ import { Route as CandidaturesRouteImport } from './routes/candidatures'
 import { Route as DataQualityRouteImport } from './routes/data-quality'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
-import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as MetierScopeRouteImport } from './routes/metier-scope'
 import { Route as MonCvRouteImport } from './routes/mon-cv'
 import { Route as OffresRouteImport } from './routes/offres'
@@ -59,11 +58,6 @@ const EmailsRoute = EmailsRouteImport.update({
 const IntelligenceRoute = IntelligenceRouteImport.update({
   id: '/intelligence',
   path: '/intelligence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KanbanRoute = KanbanRouteImport.update({
-  id: '/kanban',
-  path: '/kanban',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MetierScopeRoute = MetierScopeRouteImport.update({
@@ -115,7 +109,6 @@ export interface FileRoutesByFullPath {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
-  '/kanban': typeof KanbanRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -133,7 +126,6 @@ export interface FileRoutesByTo {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
-  '/kanban': typeof KanbanRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -152,7 +144,6 @@ export interface FileRoutesById {
   '/data-quality': typeof DataQualityRoute
   '/emails': typeof EmailsRoute
   '/intelligence': typeof IntelligenceRoute
-  '/kanban': typeof KanbanRoute
   '/metier-scope': typeof MetierScopeRoute
   '/mon-cv': typeof MonCvRoute
   '/offres': typeof OffresRoute
@@ -172,7 +163,6 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
-    | '/kanban'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -190,7 +180,6 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
-    | '/kanban'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -208,7 +197,6 @@ export interface FileRouteTypes {
     | '/data-quality'
     | '/emails'
     | '/intelligence'
-    | '/kanban'
     | '/metier-scope'
     | '/mon-cv'
     | '/offres'
@@ -227,7 +215,6 @@ export interface RootRouteChildren {
   DataQualityRoute: typeof DataQualityRoute
   EmailsRoute: typeof EmailsRoute
   IntelligenceRoute: typeof IntelligenceRoute
-  KanbanRoute: typeof KanbanRoute
   MetierScopeRoute: typeof MetierScopeRoute
   MonCvRoute: typeof MonCvRoute
   OffresRoute: typeof OffresRoute
@@ -287,13 +274,6 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kanban': {
-      id: '/kanban'
-      path: '/kanban'
-      fullPath: '/kanban'
-      preLoaderRoute: typeof KanbanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/metier-scope': {
@@ -363,7 +343,6 @@ const rootRouteChildren: RootRouteChildren = {
   DataQualityRoute: DataQualityRoute,
   EmailsRoute: EmailsRoute,
   IntelligenceRoute: IntelligenceRoute,
-  KanbanRoute: KanbanRoute,
   MetierScopeRoute: MetierScopeRoute,
   MonCvRoute: MonCvRoute,
   OffresRoute: OffresRoute,

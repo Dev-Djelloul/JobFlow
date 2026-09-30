@@ -7,7 +7,6 @@ import {
   Compass,
   FileText,
   LayoutDashboard,
-  KanbanSquare,
   ListTodo,
   Settings,
   ShieldCheck,
@@ -31,7 +30,6 @@ import { useSettings } from "@/hooks/useSettings";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
