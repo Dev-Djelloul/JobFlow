@@ -48,6 +48,7 @@ import { CoverLetterGenerator } from "./CoverLetterGenerator";
 import { JobAssistantChat } from "./JobAssistantChat";
 import { JobSheetGenerator } from "./JobSheetGenerator";
 import { MarkdownLite } from "@/components/common/MarkdownLite";
+import { GlassdoorLinks } from "@/components/common/GlassdoorLinks";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationDocumentsSection } from "./ApplicationDocumentsSection";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
@@ -362,6 +363,13 @@ export function ApplicationDetail({
               {application.notes || "Aucune note pour le moment."}
             </p>
           </div>
+
+          {application.company ? (
+            <>
+              <Separator />
+              <GlassdoorLinks companyName={application.company} />
+            </>
+          ) : null}
 
           {application.jobSheetText ? (
             <>

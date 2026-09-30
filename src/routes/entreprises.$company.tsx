@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/applications/StatusBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { CompanyContactsSection } from "@/components/contacts/CompanyContactsSection";
+import { GlassdoorLinks } from "@/components/common/GlassdoorLinks";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationDialogs } from "@/hooks/useApplicationDialogs";
 import { buildCompanies, conversionRates, isOverdue } from "@/lib/companies";
@@ -149,6 +150,8 @@ function CompanyDetailPage() {
             ) : null}
           </CardContent>
         </Card>
+
+        <GlassdoorLinks companyName={company.name} />
 
         <CompanyContactsSection companyKey={company.key} companyName={company.name} />
 
