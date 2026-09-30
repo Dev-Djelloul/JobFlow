@@ -289,3 +289,39 @@ export function clearCvFile(): void {
     /* ignore */
   }
 }
+
+export interface MetierScopeEntry {
+  id: string;
+  query: string;
+  text: string;
+  searched_at: string;
+}
+
+const METIER_SCOPE_KEY = "jobflow.metierScopeHistory.v1";
+const MAX_METIER_SCOPE_ENTRIES = 12;
+
+/** Historique local des métiers consultés dans MétierScope — le texte généré est mis en cache
+ * pour éviter un nouvel appel IA (facturé) à chaque fois qu'on revisite un métier déjà exploré. */
+export function loadMetierScopeHistory(): MetierScopeEntry[] {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(METIER_SCOPE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as MetierScopeEntry[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveMetierScopeHistory(entries: MetierScopeEntry[]): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(
+      METIER_SCOPE_KEY,
+      JSON.stringify(entries.slice(0, MAX_METIER_SCOPE_ENTRIES)),
+    );
+  } catch {
+    /* quota ou navigation privée : la recherche reste utilisable, juste pas mémorisée */
+  }
+}

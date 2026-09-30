@@ -326,10 +326,12 @@ l'intitulé de poste et de la description de l'offre fournis, rédige une fiche 
 structurée en sections, chacune sur sa propre ligne en MAJUSCULES suivie d'un saut de ligne :
 DÉFINITION (2-3 phrases sur le métier en général, pas seulement cette offre), COMPÉTENCES REQUISES (liste
 numérotée : savoir-faire et savoirs attendus), CONDITIONS D'ACCÈS (diplômes, formations, expérience généralement
-demandés pour ce métier), CONTEXTE DE TRAVAIL (environnement, horaires, déplacements typiques), MOBILITÉ /
-ÉVOLUTION (métiers proches ou évolutions possibles, en liste numérotée). Tu peux utiliser **gras** pour les termes
-clés et des listes numérotées "1. ", jamais de titres markdown (#) ni de tableaux. Reste général sur le métier
-(comme une vraie fiche ROME), tout en tenant compte du contexte de l'offre donnée pour l'illustrer.`;
+demandés pour ce métier), CONTEXTE DE TRAVAIL (environnement, horaires, déplacements typiques), SALAIRE INDICATIF
+(fourchette réaliste en France selon le niveau d'expérience — junior/confirmé/senior — en précisant que ce sont des
+ordres de grandeur, pas des données de marché en temps réel), MOBILITÉ / ÉVOLUTION (métiers proches ou évolutions
+possibles, en liste numérotée). Tu peux utiliser **gras** pour les termes clés et des listes numérotées "1. ",
+jamais de titres markdown (#) ni de tableaux. Reste général sur le métier (comme une vraie fiche ROME ou
+MétierScope), tout en tenant compte du contexte de l'offre donnée pour l'illustrer si elle est fournie.`;
 
 const MAX_JOB_SHEET_DESCRIPTION_CHARS = 8000;
 
