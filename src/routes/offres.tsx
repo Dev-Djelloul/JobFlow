@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Bell,
@@ -39,7 +39,16 @@ import { formatDate, relativeDateLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationInput, ContractType } from "@/types/application";
 
+interface OffresSearch {
+  alertId?: string | undefined;
+  offerIds?: string | undefined;
+}
+
 export const Route = createFileRoute("/offres")({
+  validateSearch: (search: Record<string, unknown>): OffresSearch => ({
+    alertId: typeof search["alertId"] === "string" ? search["alertId"] : undefined,
+    offerIds: typeof search["offerIds"] === "string" ? search["offerIds"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Offres d'emploi — JobFlow" },
@@ -107,8 +116,14 @@ function mapExperienceLevel(exige: string): string {
 }
 
 function OffresPage() {
+  const search = Route.useSearch();
   const { applications, createApplication } = useApplications();
   const dialogs = useApplicationDialogs();
+  const [highlightedOfferIds] = useState<Set<string>>(
+    () => new Set(search.offerIds ? search.offerIds.split(",").filter(Boolean) : []),
+  );
+  const highlightedCardRef = useRef<HTMLDivElement | null>(null);
+  const scrolledToHighlightRef = useRef(false);
   const [source, setSource] = useState<OfferSource>("france_travail");
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
@@ -135,16 +150,37 @@ function OffresPage() {
   useEffect(() => {
     setFavoriteIds(loadFavoriteOfferIds());
     const stored = loadAlerts();
-    setAlerts(stored);
-    if (stored.length > 0) {
+
+    // Arrivée depuis une notification de nouvelle offre : reprend la recherche de l'alerte
+    // concernée directement, plutôt que de laisser l'utilisateur la retrouver dans la liste.
+    const target = search.alertId ? stored.find((a) => a.id === search.alertId) : undefined;
+    let baseAlerts = stored;
+    if (target) {
+      setSource(target.source);
+      setQuery(target.motsCles);
+      setLocation(target.location);
+      setTypeContrat(target.typeContrat);
+      const updatedAlert = markAlertSeen(target);
+      baseAlerts = stored.map((a) => (a.id === updatedAlert.id ? updatedAlert : a));
+      saveAlerts(baseAlerts);
+      void runSearch(0, {
+        source: target.source,
+        motsCles: target.motsCles,
+        location: target.location,
+      });
+    }
+    setAlerts(baseAlerts);
+
+    if (baseAlerts.length > 0) {
       setAlertsChecking(true);
-      refreshAllAlerts(stored)
+      refreshAllAlerts(baseAlerts)
         .then((updated) => {
           setAlerts(updated);
           saveAlerts(updated);
         })
         .finally(() => setAlertsChecking(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleFavoriteOffer = (offerId: string) => {
@@ -296,6 +332,16 @@ function OffresPage() {
       location: alert.location,
     });
   };
+
+  // Amène automatiquement à l'écran la nouvelle offre ayant déclenché la notification, une
+  // seule fois (sinon un re-rendu ultérieur repousserait le scroll à chaque fois).
+  useEffect(() => {
+    if (scrolledToHighlightRef.current) return;
+    if (highlightedOfferIds.size === 0) return;
+    if (!highlightedCardRef.current) return;
+    highlightedCardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrolledToHighlightRef.current = true;
+  }, [offers, highlightedOfferIds]);
 
   const visibleOffers = offers
     .filter((o) => (typeContrat ? mapContractType(o) === typeContrat : true))
@@ -577,12 +623,22 @@ function OffresPage() {
                 {group.items.map((offer) => {
                   const alreadyAdded = offer.url ? existingUrls.has(offer.url) : false;
                   const isFavorite = favoriteIds.has(offer.id);
+                  const isHighlighted = highlightedOfferIds.has(offer.id);
                   return (
                     <Card
                       key={`${offer.source}-${offer.id}`}
-                      className="gap-2 rounded-lg p-4 shadow-none"
+                      ref={isHighlighted ? highlightedCardRef : undefined}
+                      className={cn(
+                        "gap-2 rounded-lg p-4 shadow-none",
+                        isHighlighted && "ring-2 ring-primary",
+                      )}
                     >
                       <CardContent className="space-y-2 p-0">
+                        {isHighlighted ? (
+                          <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                            Nouvelle offre
+                          </span>
+                        ) : null}
                         <div className="flex items-start justify-between gap-2">
                           <p className="flex items-start gap-1.5 font-medium leading-snug">
                             <SourceLogo

@@ -71,7 +71,11 @@ export function JobAlertsNotifier() {
           );
           n.onclick = () => {
             window.focus();
-            window.location.href = "/offres";
+            const params = new URLSearchParams({
+              alertId: alert.id,
+              offerIds: fresh.join(","),
+            });
+            window.location.href = `/offres?${params.toString()}`;
           };
         }
         if (changed) saveNotified(notified);
