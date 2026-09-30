@@ -139,7 +139,14 @@ function MarcheEmploiPage() {
       <div className="flex flex-col gap-6">
         <Card className="rounded-xl shadow-none">
           <CardHeader>
-            <CardTitle className="text-base">Taux d'accès à l'emploi après formation</CardTitle>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/img/France-Travail-logo.jpg"
+                alt="France Travail"
+                className="h-7 w-7 shrink-0 rounded-md object-cover"
+              />
+              <CardTitle className="text-base">Taux d'accès à l'emploi après formation</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
