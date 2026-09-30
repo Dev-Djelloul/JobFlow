@@ -17,6 +17,14 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
 import { DataEmploiCard } from "@/components/common/DataEmploiCard";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   fetchAccesEmploiStats,
   listAllFormationActivities,
   searchFormationActivities,
@@ -406,6 +414,28 @@ function MarcheEmploiPage() {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+              </CardContent>
+              <CardContent className="pt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Trimestre</TableHead>
+                      <TableHead className="text-right">Accès à l'emploi (6 mois)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {result.periods
+                      .filter((p) => p.tauxPct !== null)
+                      .map((p) => (
+                        <TableRow key={p.code}>
+                          <TableCell>{p.label}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {Math.round((p.tauxPct ?? 0) * 10) / 10} %
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           ) : null}
