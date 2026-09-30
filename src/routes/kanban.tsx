@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
+import { SuccessScoreBadge } from "@/components/applications/SuccessScoreBadge";
 import {
   STATUS_COLUMN_BG_CLASSES,
   STATUS_DOT_CLASSES,
@@ -159,6 +160,9 @@ function KanbanPage() {
                           <p className="mt-1 text-[11px] text-muted-foreground">
                             {app.contract_type} · {formatDate(app.application_date)}
                           </p>
+                          <div className="mt-1.5">
+                            <SuccessScoreBadge application={app} size="sm" />
+                          </div>
                           {/* Alternative au glisser-déposer (HTML5 DnD non tactile : ne
                               fonctionne pas sur mobile/tablette). */}
                           <Select

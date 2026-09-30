@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "./StatusBadge";
+import { SuccessScoreBadge } from "./SuccessScoreBadge";
 import { FollowUpSection } from "./FollowUpSection";
 import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
@@ -241,6 +242,7 @@ export function ApplicationDetail({
 
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={application.status} />
+            <SuccessScoreBadge application={application} />
             <ExperienceBadge level={application.experience_level} />
             <Select
               value={application.status}

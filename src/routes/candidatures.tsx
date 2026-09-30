@@ -25,6 +25,7 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { AddressLink } from "@/components/common/AddressLink";
 import { SourceLogo } from "@/components/common/SourceLogo";
 import { StatusBadge } from "@/components/applications/StatusBadge";
+import { SuccessScoreBadge } from "@/components/applications/SuccessScoreBadge";
 import { ApplicationForm } from "@/components/applications/ApplicationForm";
 import { ApplicationDetail } from "@/components/applications/ApplicationDetail";
 import { useApplications } from "@/hooks/useApplications";
@@ -213,6 +214,7 @@ function ApplicationsPage() {
                       <TableHead className="hidden xl:table-cell">Source</TableHead>
                       <TableHead className="hidden sm:table-cell">Date</TableHead>
                       <TableHead>Statut</TableHead>
+                      <TableHead className="hidden md:table-cell">Score</TableHead>
                       <TableHead className="hidden lg:table-cell">Prochaine action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -268,6 +270,9 @@ function ApplicationsPage() {
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={app.status} />
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <SuccessScoreBadge application={app} size="sm" />
                         </TableCell>
                         <TableCell className="hidden max-w-[240px] truncate lg:table-cell">
                           {app.next_action || "—"}

@@ -399,3 +399,91 @@ Rédige la fiche métier.`;
       return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
     }
   });
+
+const SUCCESS_ESTIMATE_SYSTEM_PROMPT = `Tu es un recruteur expérimenté sur le marché de l'emploi français. À partir de
+l'offre et du profil du candidat fournis, donne une estimation honnête et nuancée de ses chances de succès pour
+cette candidature. Réponds STRICTEMENT dans ce format, sans rien avant ni après :
+Ligne 1 : "Estimation : XX%" (un nombre entier entre 0 et 100, ton évaluation réaliste — ni complaisante ni sévère).
+Puis un paragraphe court (3-4 phrases) qui justifie ce chiffre : points forts du profil par rapport à l'offre,
+principaux points de vigilance ou écarts. Pas de markdown, pas de listes, français, direct.`;
+
+const MAX_SUCCESS_ESTIMATE_JOB_CHARS = 8000;
+const MAX_SUCCESS_ESTIMATE_CV_CHARS = 6000;
+
+export const estimateSuccessChance = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      position: z.string().trim().min(1).max(200),
+      company: z.string().trim().max(200).optional(),
+      jobDescription: z.string().trim().max(20000).optional(),
+      cvSummary: z.string().trim().max(20000).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<GenerationResult> => {
+    try {
+      const apiKey = process.env["OPENROUTER_API_KEY"];
+      if (!apiKey) {
+        return {
+          ok: false,
+          error:
+            "Estimation IA non configurée : variable OPENROUTER_API_KEY manquante sur le Worker.",
+        };
+      }
+      if (!data.cvSummary?.trim()) {
+        return {
+          ok: false,
+          error:
+            "Renseignez d'abord votre profil professionnel dans Paramètres pour obtenir une estimation IA.",
+        };
+      }
+
+      const jobDescription = data.jobDescription?.slice(0, MAX_SUCCESS_ESTIMATE_JOB_CHARS);
+      const cvSummary = data.cvSummary.slice(0, MAX_SUCCESS_ESTIMATE_CV_CHARS);
+
+      const userPrompt = `Poste visé : ${data.position}
+${data.company ? `Entreprise : ${data.company}\n` : ""}${
+        jobDescription
+          ? `Description de l'offre :\n${jobDescription}\n`
+          : "(Aucune description d'offre renseignée.)\n"
+      }
+Profil du candidat :
+${cvSummary}`;
+
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://jobflow.digitalblueskye.com",
+          "X-Title": "JobFlow",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: SUCCESS_ESTIMATE_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.4,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        return {
+          ok: false,
+          error: `Estimation échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+        };
+      }
+
+      const json = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = json.choices?.[0]?.message?.content?.trim();
+      if (!text) {
+        return { ok: false, error: "La réponse du modèle était vide." };
+      }
+      return { ok: true, text };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
+    }
+  });
