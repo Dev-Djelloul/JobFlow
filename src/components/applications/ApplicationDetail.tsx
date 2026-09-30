@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Bot,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -42,6 +43,7 @@ import { FollowUpSection } from "./FollowUpSection";
 import { ApplicationTimeline } from "./ApplicationTimeline";
 import { EmailComposer } from "@/components/email/EmailComposer";
 import { CoverLetterGenerator } from "./CoverLetterGenerator";
+import { JobAssistantChat } from "./JobAssistantChat";
 import { suggestTemplateId } from "@/lib/email";
 import { ApplicationDocumentsSection } from "./ApplicationDocumentsSection";
 import { ApplicationContactsSection } from "@/components/contacts/ApplicationContactsSection";
@@ -130,6 +132,7 @@ export function ApplicationDetail({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [coverLetterOpen, setCoverLetterOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
 
   const navIndex = application
@@ -261,6 +264,9 @@ export function ApplicationDetail({
             </Button>
             <Button size="sm" variant="outline" onClick={() => setCoverLetterOpen(true)}>
               <Sparkles className="size-4" /> Lettre de motivation
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setAssistantOpen(true)}>
+              <Bot className="size-4" /> Assistant IA
             </Button>
             <Button size="sm" onClick={() => onEdit(application)}>
               <Pencil className="size-4" /> Modifier
@@ -408,6 +414,12 @@ export function ApplicationDetail({
         application={application}
         open={coverLetterOpen}
         onOpenChange={setCoverLetterOpen}
+      />
+
+      <JobAssistantChat
+        application={application}
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

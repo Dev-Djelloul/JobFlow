@@ -228,3 +228,94 @@ Rédige le CV optimisé ATS complet.`;
       return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
     }
   });
+
+const ASSISTANT_SYSTEM_PROMPT = `Tu es un assistant spécialisé en recherche d'emploi sur le marché français. Tu aides
+un candidat à préparer sa candidature à une offre précise (déjà fournie ci-dessous) : compétences attendues à
+mettre en avant, questions pertinentes à poser en entretien, points à clarifier sur le poste, écarts entre son
+profil et l'offre, vocabulaire du secteur, etc. Réponds toujours en t'appuyant sur l'offre et le profil fournis —
+si une information manque pour répondre précisément, dis-le plutôt que d'inventer. Réponses concises, concrètes,
+en français, sans blabla ni disclaimer inutile.`;
+
+const MAX_ASSISTANT_JOB_CONTEXT_CHARS = 6000;
+const MAX_ASSISTANT_CV_SUMMARY_CHARS = 4000;
+const MAX_ASSISTANT_MESSAGE_CHARS = 4000;
+/** Nombre de tours de conversation conservés (en plus du message courant) — au-delà, le
+ * contexte du poste/profil pèse déjà largement plus que l'historique de la discussion. */
+const MAX_ASSISTANT_HISTORY_MESSAGES = 12;
+
+const assistantMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().trim().min(1).max(MAX_ASSISTANT_MESSAGE_CHARS),
+});
+
+export const askJobAssistant = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      position: z.string().trim().min(1).max(200),
+      company: z.string().trim().min(1).max(200),
+      /** Description de l'offre / notes de la candidature — sert de contexte principal. */
+      jobContext: z.string().trim().max(20000).optional(),
+      /** Résumé du profil candidat renseigné dans Paramètres. */
+      cvSummary: z.string().trim().max(20000).optional(),
+      /** Historique de la conversation, message courant inclus (dernier élément). */
+      messages: z.array(assistantMessageSchema).min(1).max(40),
+    }),
+  )
+  .handler(async ({ data }): Promise<GenerationResult> => {
+    try {
+      const apiKey = process.env["OPENROUTER_API_KEY"];
+      if (!apiKey) {
+        return {
+          ok: false,
+          error:
+            "Assistant IA non configuré : variable OPENROUTER_API_KEY manquante sur le Worker.",
+        };
+      }
+
+      const jobContext = data.jobContext?.slice(0, MAX_ASSISTANT_JOB_CONTEXT_CHARS);
+      const cvSummary = data.cvSummary?.slice(0, MAX_ASSISTANT_CV_SUMMARY_CHARS);
+      const recentMessages = data.messages.slice(-MAX_ASSISTANT_HISTORY_MESSAGES);
+
+      const contextPrompt = `Offre visée : ${data.position} chez ${data.company}
+${jobContext ? `Description de l'offre / notes :\n${jobContext}\n` : "(Aucune description d'offre renseignée sur cette candidature.)\n"}
+${cvSummary ? `Profil du candidat :\n${cvSummary}` : "(Aucun résumé de profil renseigné dans Paramètres.)"}`;
+
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://jobflow.digitalblueskye.com",
+          "X-Title": "JobFlow",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: ASSISTANT_SYSTEM_PROMPT },
+            { role: "system", content: contextPrompt },
+            ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+          temperature: 0.5,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        return {
+          ok: false,
+          error: `Réponse échouée (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+        };
+      }
+
+      const json = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = json.choices?.[0]?.message?.content?.trim();
+      if (!text) {
+        return { ok: false, error: "La réponse du modèle était vide." };
+      }
+      return { ok: true, text };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Erreur inconnue." };
+    }
+  });
