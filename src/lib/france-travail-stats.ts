@@ -50,6 +50,10 @@ interface RawPeriodValue {
   valeurPrincipaleTaux?: number;
   valeurPrincipaleDecimale?: number;
   valeurPrincipaleNombre?: number;
+  valeurPrincipalePourcentage?: number;
+  valeurSecondaireTaux?: number;
+  valeurSecondairePourcentage?: number;
+  valeurSecondairePourcentage2?: number;
 }
 
 interface RawStatResponse {
@@ -117,11 +121,21 @@ export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
         };
       }
       const json = (await res.json()) as RawStatResponse;
+      // Selon l'indicateur, la valeur en pourcentage peut atterrir dans plusieurs champs
+      // différents (valeur "principale" ou "secondaire", taux ou pourcentage) — on prend le
+      // premier champ numérique disponible plutôt que de parier sur un seul nom de champ.
       const periods = (json.listeValeursParPeriode ?? [])
         .map((p) => ({
           code: p.codePeriode ?? "",
           label: p.libPeriode ?? p.codePeriode ?? "",
-          tauxPct: p.valeurPrincipaleTaux ?? p.valeurPrincipaleDecimale ?? null,
+          tauxPct:
+            p.valeurPrincipaleTaux ??
+            p.valeurPrincipalePourcentage ??
+            p.valeurSecondaireTaux ??
+            p.valeurSecondairePourcentage ??
+            p.valeurSecondairePourcentage2 ??
+            p.valeurPrincipaleDecimale ??
+            null,
         }))
         .filter((p) => p.code)
         .sort((a, b) => a.code.localeCompare(b.code));

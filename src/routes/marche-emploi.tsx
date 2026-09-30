@@ -154,6 +154,11 @@ function MarcheEmploiPage() {
       } else if (res.periods.length === 0) {
         setError("Aucune donnée disponible pour ce domaine de formation et ce territoire.");
         setResult(null);
+      } else if (res.periods.every((p) => p.tauxPct === null)) {
+        setError(
+          "France Travail a répondu mais sans valeur de taux exploitable pour ce domaine et ce territoire (donnée probablement masquée car l'effectif est trop faible).",
+        );
+        setResult(null);
       } else {
         setResult({ territoireLabel: res.territoireLabel, periods: res.periods });
       }
