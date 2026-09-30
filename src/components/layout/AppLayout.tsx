@@ -31,13 +31,13 @@ import { useSettings } from "@/hooks/useSettings";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/data-quality", label: "Qualité des données", icon: ShieldCheck },
   { to: "/candidatures", label: "Candidatures", icon: Briefcase },
   { to: "/mon-cv", label: "Mon CV", icon: FileText },
   { to: "/offres", label: "Offres", icon: Search },
   { to: "/metier-scope", label: "MétierScope", icon: Compass },
-  { to: "/kanban", label: "Vue Kanban", icon: KanbanSquare },
   { to: "/actions", label: "Actions", icon: ListTodo },
   { to: "/intelligence", label: "À votre attention", icon: Sparkles },
   { to: "/entreprises", label: "Entreprises", icon: Building2 },
