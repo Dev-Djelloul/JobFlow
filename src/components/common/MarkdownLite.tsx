@@ -34,7 +34,7 @@ export function MarkdownLite({ text }: { text: string }) {
           return (
             <p
               key={blockIndex}
-              className="mt-3 border-b border-border pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground first:mt-0"
+              className="mt-4 inline-block rounded-md bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-wide text-primary first:mt-0"
             >
               {lines[0]!.trim()}
             </p>
