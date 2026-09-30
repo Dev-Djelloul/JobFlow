@@ -150,36 +150,61 @@ export interface ActiviteOption {
   label: string;
 }
 
+// Cache mémoire du référentiel complet (le Worker reste "chaud" entre requêtes) : la liste des
+// domaines de formation FORM14 ne change quasiment jamais, et le paramètre "filtreActivite" de
+// l'API filtre par préfixe de code (ex: "A12"), pas par mot du libellé — impossible d'y passer
+// un mot-clé saisi par l'utilisateur. On récupère donc la liste une fois et on filtre nous-mêmes
+// sur le libellé.
+let activitesCache: ActiviteOption[] | null = null;
+let activitesCacheAt = 0;
+const ACTIVITES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+async function loadAllFormationActivites(): Promise<ActiviteOption[]> {
+  if (activitesCache && Date.now() - activitesCacheAt < ACTIVITES_CACHE_TTL_MS) {
+    return activitesCache;
+  }
+  const token = await getStatsAccessToken();
+  const res = await fetch(
+    "https://api.francetravail.io/partenaire/stats-entrees-sorties-formations/v1/referentiel/activites/FORM14",
+    { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } },
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new FranceTravailStatsError(
+      `Référentiel des domaines de formation échoué (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
+    );
+  }
+  const json = (await res.json()) as { activites?: RawActivite[] };
+  const options = (json.activites ?? [])
+    .filter((a): a is Required<RawActivite> => !!a.codeActivite && !!a.libelleActivite)
+    .map((a) => ({ code: a.codeActivite, label: a.libelleActivite }));
+  activitesCache = options;
+  activitesCacheAt = Date.now();
+  return options;
+}
+
 /**
- * Recherche dans le référentiel des domaines de formation FORM14 (nom, code) — utilisé pour
- * laisser choisir un métier/domaine par mot-clé plutôt que d'exiger de connaître le code à
- * l'avance.
+ * Recherche dans le référentiel des domaines de formation FORM14 par mot-clé du libellé —
+ * laisse choisir un domaine sans avoir à connaître son code à l'avance.
  */
 export const searchFormationActivities = createServerFn({ method: "GET" })
   .validator(z.object({ filtre: z.string().trim().max(100).optional() }))
   .handler(
     async ({ data }): Promise<{ ok: boolean; options: ActiviteOption[]; error?: string }> => {
       try {
-        const token = await getStatsAccessToken();
-        const url = new URL(
-          "https://api.francetravail.io/partenaire/stats-entrees-sorties-formations/v1/referentiel/activites/FORM14",
-        );
-        if (data.filtre) url.searchParams.set("filtreActivite", data.filtre);
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        const all = await loadAllFormationActivites();
+        if (!data.filtre) return { ok: true, options: all.slice(0, 20) };
+        const words = stripAccents(data.filtre)
+          .split(/\s+/)
+          .filter((w) => w.length > 1);
+        const options = all.filter((a) => {
+          const label = stripAccents(a.label);
+          return words.every((w) => label.includes(w));
         });
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          return {
-            ok: false,
-            options: [],
-            error: `Référentiel des domaines de formation échoué (${res.status}) : ${body.slice(0, 300) || "réponse vide"}`,
-          };
-        }
-        const json = (await res.json()) as { activites?: RawActivite[] };
-        const options = (json.activites ?? [])
-          .filter((a): a is Required<RawActivite> => !!a.codeActivite && !!a.libelleActivite)
-          .map((a) => ({ code: a.codeActivite, label: a.libelleActivite }));
         return { ok: true, options };
       } catch (e) {
         return {

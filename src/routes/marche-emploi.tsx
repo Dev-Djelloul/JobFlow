@@ -40,10 +40,12 @@ export const Route = createFileRoute("/marche-emploi")({
 function useActiviteSearch(query: string) {
   const [options, setOptions] = useState<ActiviteOption[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (query.trim().length < 2) {
       setOptions([]);
+      setSearchError(null);
       return;
     }
     let cancelled = false;
@@ -52,10 +54,19 @@ function useActiviteSearch(query: string) {
       void searchFormationActivities({ data: { filtre: query.trim() } })
         .then((res) => {
           if (cancelled) return;
-          setOptions(res.ok ? res.options.slice(0, 12) : []);
+          if (res.ok) {
+            setOptions(res.options.slice(0, 12));
+            setSearchError(null);
+          } else {
+            setOptions([]);
+            setSearchError(res.error ?? "Erreur inconnue.");
+          }
         })
-        .catch(() => {
-          if (!cancelled) setOptions([]);
+        .catch((e: unknown) => {
+          if (!cancelled) {
+            setOptions([]);
+            setSearchError(e instanceof Error ? e.message : "La recherche a échoué.");
+          }
         })
         .finally(() => {
           if (!cancelled) setSearching(false);
@@ -67,14 +78,14 @@ function useActiviteSearch(query: string) {
     };
   }, [query]);
 
-  return { options, searching };
+  return { options, searching, searchError };
 }
 
 function MarcheEmploiPage() {
   const [activiteQuery, setActiviteQuery] = useState("");
   const [selected, setSelected] = useState<ActiviteOption | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { options, searching } = useActiviteSearch(activiteQuery);
+  const { options, searching, searchError } = useActiviteSearch(activiteQuery);
   const boxRef = useRef<HTMLDivElement>(null);
 
   const [departement, setDepartement] = useState("75");
@@ -183,6 +194,8 @@ function MarcheEmploiPage() {
                   <div className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg sm:w-80">
                     {searching ? (
                       <p className="px-3 py-2 text-xs text-muted-foreground">Recherche…</p>
+                    ) : searchError ? (
+                      <p className="px-3 py-2 text-xs text-destructive">{searchError}</p>
                     ) : options.length === 0 ? (
                       <p className="px-3 py-2 text-xs text-muted-foreground">
                         Aucun domaine trouvé pour « {activiteQuery} ».
