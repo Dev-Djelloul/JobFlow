@@ -27,7 +27,7 @@ export function UpdatePrompt() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 flex max-w-xs flex-col gap-2 rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-lg"
+      className="fixed bottom-24 right-4 z-[100] flex max-w-xs flex-col gap-2 rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-lg"
     >
       <p>Une nouvelle version de Jobee Flow est disponible.</p>
       <p className="text-xs text-muted-foreground">Vos données locales sont conservées.</p>
