@@ -47,6 +47,9 @@ async function getStatsAccessToken(): Promise<string> {
 interface RawPeriodValue {
   codePeriode?: string;
   libPeriode?: string;
+  codeTypeTerritoire?: string;
+  codeTerritoire?: string;
+  libTerritoire?: string;
   valeurPrincipaleTaux?: number;
   valeurPrincipaleDecimale?: number;
   valeurPrincipaleNombre?: number;
@@ -66,6 +69,8 @@ export interface AccesEmploiPeriod {
   code: string;
   label: string;
   tauxPct: number | null;
+  territoireCode?: string | undefined;
+  territoireLabel?: string | undefined;
 }
 
 export interface AccesEmploiStatsResult {
@@ -136,12 +141,14 @@ export const fetchAccesEmploiStats = createServerFn({ method: "POST" })
             p.valeurSecondairePourcentage2 ??
             p.valeurPrincipaleDecimale ??
             null,
+          territoireCode: p.codeTerritoire,
+          territoireLabel: p.libTerritoire,
         }))
         .filter((p) => p.code)
         .sort((a, b) => a.code.localeCompare(b.code));
       return {
         ok: true,
-        territoireLabel: json.libTerritoire,
+        territoireLabel: json.libTerritoire ?? periods.at(-1)?.territoireLabel,
         indicateurLabel: json.libIndicateur,
         periods,
       };

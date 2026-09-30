@@ -123,6 +123,7 @@ function MarcheEmploiPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     territoireLabel?: string | undefined;
+    requestedDept: string;
     periods: AccesEmploiPeriod[];
   } | null>(null);
 
@@ -161,7 +162,11 @@ function MarcheEmploiPage() {
         );
         setResult(null);
       } else {
-        setResult({ territoireLabel: res.territoireLabel, periods: res.periods });
+        setResult({
+          territoireLabel: res.territoireLabel,
+          requestedDept: departement.trim(),
+          periods: res.periods,
+        });
       }
     } catch {
       setError("La requête a échoué, réessayez.");
@@ -345,6 +350,12 @@ function MarcheEmploiPage() {
                     </span>
                   ) : null}
                 </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Département demandé :{" "}
+                  {departmentName(result.requestedDept) || result.requestedDept} (
+                  {result.requestedDept}) — territoire renvoyé par France Travail :{" "}
+                  {result.territoireLabel ?? "non précisé dans la réponse"}
+                </p>
               </CardHeader>
               <CardContent className="h-64 pl-0">
                 <ResponsiveContainer width="100%" height="100%">
