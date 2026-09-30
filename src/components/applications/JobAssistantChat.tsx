@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Bot, Send, Sparkles, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,78 @@ import type { Application } from "@/types/application";
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+/** Segmente une ligne en texte normal / passages en gras (**...**), sans dépendance markdown —
+ * suffisant pour les réponses de l'assistant qui n'utilisent que ce niveau de mise en forme. */
+function renderInline(line: string) {
+  const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold text-primary">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <Fragment key={i}>{part}</Fragment>;
+  });
+}
+
+const ORDERED_ITEM_RE = /^\d+[.)]\s+/;
+const BULLET_ITEM_RE = /^[-•]\s+/;
+
+/** Rendu minimal des réponses de l'assistant : gras, listes numérotées/à puces, paragraphes —
+ * pour éviter d'afficher les astérisques bruts du markdown que renvoie systématiquement le modèle. */
+function AssistantContent({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/).filter((b) => b.trim());
+  return (
+    <div className="space-y-2">
+      {blocks.map((block, blockIndex) => {
+        const lines = block.split("\n").filter((l) => l.trim());
+        if (lines.length > 0 && lines.every((l) => ORDERED_ITEM_RE.test(l.trim()))) {
+          return (
+            <ol key={blockIndex} className="list-none space-y-1.5">
+              {lines.map((line, i) => {
+                const [, num] = line.trim().match(/^(\d+)[.)]\s+/) ?? [];
+                const rest = line.trim().replace(ORDERED_ITEM_RE, "");
+                return (
+                  <li key={i} className="flex gap-2">
+                    <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
+                      {num}
+                    </span>
+                    <span>{renderInline(rest)}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          );
+        }
+        if (lines.length > 0 && lines.every((l) => BULLET_ITEM_RE.test(l.trim()))) {
+          return (
+            <ul key={blockIndex} className="list-none space-y-1.5">
+              {lines.map((line, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{renderInline(line.trim().replace(BULLET_ITEM_RE, ""))}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        return (
+          <p key={blockIndex}>
+            {lines.map((line, i) => (
+              <Fragment key={i}>
+                {i > 0 ? <br /> : null}
+                {renderInline(line)}
+              </Fragment>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 const SUGGESTIONS = [
@@ -134,16 +206,16 @@ export function JobAssistantChat({ application, open, onOpenChange }: Props) {
                 >
                   {m.role === "user" ? <User className="size-3.5" /> : <Bot className="size-3.5" />}
                 </span>
-                <p
+                <div
                   className={cn(
-                    "max-w-[80%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm",
+                    "max-w-[80%] rounded-lg px-3 py-2 text-sm",
                     m.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background border",
+                      ? "whitespace-pre-wrap bg-primary text-primary-foreground"
+                      : "border bg-background",
                   )}
                 >
-                  {m.content}
-                </p>
+                  {m.role === "assistant" ? <AssistantContent text={m.content} /> : m.content}
+                </div>
               </div>
             ))
           )}
